@@ -1,12 +1,7 @@
 apiVersion: monitor.example.com/v1alpha1
 kind: KubeResourcesMonitor
 metadata:
-  labels:
-    app.kubernetes.io/name: kuberesourcesmonitor
-    app.kubernetes.io/instance: kuberesourcesmonitor-sample
-    app.kubernetes.io/part-of: kuberesourcesmonitor
-    app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: kuberesourcesmonitor
   name: kuberesourcesmonitor-sample
 spec:
-  # TODO(user): Add fields here
+  interval: "5m"
+

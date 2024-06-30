@@ -70,7 +70,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: controller:latest
+        image: anurag2911/resourcemonitor:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false
