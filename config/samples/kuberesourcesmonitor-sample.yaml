@@ -1,7 +1,8 @@
 apiVersion: monitor.example.com/v1alpha1
 kind: KubeResourcesMonitor
 metadata:
-  name: kuberesourcesmonitor-sample
+  name: example-kuberesourcesmonitor
+  namespace: kuberesourcesmonitor-system
 spec:
   interval: "5m"
 

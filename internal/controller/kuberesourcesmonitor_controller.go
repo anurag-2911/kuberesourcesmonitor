@@ -30,34 +30,37 @@ type KubeResourcesMonitorReconciler struct {
 
 func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
     log := r.Log.WithValues("kuberesourcesmonitor", req.NamespacedName)
-
+	r.Log.Info("Reconciling KubeResourcesMonitor", "namespace", req.Namespace, "name", req.Name)
+    r.Log.Info("Reconcile function called")
     // Fetch the KubeResourcesMonitor instance
     instance := &monitorv1alpha1.KubeResourcesMonitor{}
     err := r.Get(ctx, req.NamespacedName, instance)
     if err != nil {
         if errors.IsNotFound(err) {
+			r.Log.Info("KubeResourcesMonitor resource not found. Ignoring since object must be deleted")
             return reconcile.Result{}, nil
         }
+		r.Log.Error(err, "Failed to get KubeResourcesMonitor")
         return reconcile.Result{}, err
     }
-
+	r.Log.Info("Getting podList")
     // Define a new Pod object
     podList := &corev1.PodList{}
     err = r.Client.List(ctx, podList)
     if err != nil {
         return reconcile.Result{}, err
     }
-
+	r.Log.Info("getting podCount")
     // Get the counts of resources
     podCount := len(podList.Items)
-    
+    r.Log.Info("getting services")
     serviceList := &corev1.ServiceList{}
     err = r.Client.List(ctx, serviceList)
     if err != nil {
         return reconcile.Result{}, err
     }
     serviceCount := len(serviceList.Items)
-    
+    r.Log.Info("getting configMapList")
     configMapList := &corev1.ConfigMapList{}
     err = r.Client.List(ctx, configMapList)
     if err != nil {
@@ -109,11 +112,12 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
     if err := pusher.Push(); err != nil {
         log.Error(err, "Could not push to Prometheus")
     }
-
+	r.Log.Info("Successfully reconciled KubeResourcesMonitor")
     return reconcile.Result{RequeueAfter: time.Minute * 5}, nil
 }
 
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log.Info("SetupWithManager called")
     return ctrl.NewControllerManagedBy(mgr).
         For(&monitorv1alpha1.KubeResourcesMonitor{}).
         Complete(r)
