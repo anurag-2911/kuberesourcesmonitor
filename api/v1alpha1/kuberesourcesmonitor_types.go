@@ -8,6 +8,8 @@ import (
 type KubeResourcesMonitorSpec struct {
     // Add custom fields here
     Interval string `json:"interval,omitempty"`
+    PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
+
 }
 
 // KubeResourcesMonitorStatus defines the observed state of KubeResourcesMonitor

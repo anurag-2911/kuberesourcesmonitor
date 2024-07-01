@@ -44,6 +44,8 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 		log.Error(err, "Failed to get KubeResourcesMonitor")
         return reconcile.Result{}, err
     }
+	// Get the Prometheus endpoint from the spec
+    prometheusEndpoint := instance.Spec.PrometheusEndpoint
 	log.Info("Getting podList")
     // Define a new Pod object
     podList := &corev1.PodList{}
@@ -104,7 +106,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
     secretGauge.Set(float64(secretCount))
 
     // Push metrics to Prometheus
-    pusher := push.New("http://prometheus:9091", "kuberesourcesmonitor").
+    pusher := push.New(prometheusEndpoint, "kuberesourcesmonitor").
         Collector(podGauge).
         Collector(serviceGauge).
         Collector(configMapGauge).

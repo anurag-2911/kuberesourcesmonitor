@@ -38,6 +38,8 @@ spec:
               interval:
                 description: Add custom fields here
                 type: string
+              prometheusEndpoint:
+                type: string
             type: object
           status:
             description: KubeResourcesMonitorStatus defines the observed state of
