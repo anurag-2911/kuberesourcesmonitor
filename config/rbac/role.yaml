@@ -1,34 +1,42 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  namespace: kuberesourcesmonitor-system
-  name: kuberesourcesmonitor-manager-role
+  name: manager-role
 rules:
 - apiGroups:
   - ""
   resources:
-  - pods
-  - services
   - configmaps
+  - pods
   - secrets
+  - services
   verbs:
   - get
   - list
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
   - watch
 - apiGroups:
-  - "monitor.example.com"
+  - monitor.example.com
   resources:
-  - resourcemonitors
+  - kuberesourcesmonitors/finalizers
   verbs:
-  - get
-  - list
-  - watch
+  - update
 - apiGroups:
-  - apps
+  - monitor.example.com
   resources:
-  - deployments
+  - kuberesourcesmonitors/status
   verbs:
   - get
-  - list
-  - watch
-
+  - patch
+  - update

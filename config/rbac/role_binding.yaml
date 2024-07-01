@@ -4,9 +4,9 @@ metadata:
   name: kuberesourcesmonitor-manager-rolebinding
   namespace: kuberesourcesmonitor-system
 roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: kuberesourcesmonitor-manager-role
+  kind: ClusterRole
+  name: manager-role
+  apiGroup: rbac.authorization.k8s.io 
 subjects:
 - kind: ServiceAccount
   name: kuberesourcesmonitor-controller-manager
