@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - ../crd/bases
 - ../manager
+- ../rbac
 images:
 - name: controller
   newName: anurag2911/kuberesourcesmonitor

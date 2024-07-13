@@ -1,20 +1,42 @@
-# role_controller.yaml
+---
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
-  namespace: kuberesourcesmonitor-system
-  name: controller-manager-role
+  name: manager-role
 rules:
-- apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets", "events"]
-  verbs: ["get", "list", "watch", "create"]
-- apiGroups: ["monitor.example.com"]
-  resources: ["kuberesourcesmonitors"]
-  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-- apiGroups: ["monitor.example.com"]
-  resources: ["kuberesourcesmonitors/status"]
-  verbs: ["get", "update", "patch"]
-- apiGroups: ["monitor.example.com"]
-  resources: ["kuberesourcesmonitors/finalizers"]
-  verbs: ["update"]
-
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - pods
+  - secrets
+  - services
+  verbs:
+  - get
+  - list
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors/status
+  verbs:
+  - get
+  - patch
+  - update
