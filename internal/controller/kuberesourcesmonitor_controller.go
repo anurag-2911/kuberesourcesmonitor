@@ -30,7 +30,7 @@ type KubeResourcesMonitorReconciler struct {
 
 func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
     log := r.Log.WithValues("kuberesourcesmonitor", req.NamespacedName)
-	log.Info("Reconcile function called")
+    log.Info("Reconcile function called")
     log.Info("Reconciling KubeResourcesMonitor", "namespace", req.Namespace, "name", req.Name)
     
     // Fetch the KubeResourcesMonitor instance
@@ -38,22 +38,22 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
     err := r.Get(ctx, req.NamespacedName, instance)
     if err != nil {
         if errors.IsNotFound(err) {
-			log.Info("KubeResourcesMonitor resource not found. Ignoring since object must be deleted")
+            log.Info("KubeResourcesMonitor resource not found. Ignoring since object must be deleted")
             return reconcile.Result{}, nil
         }
-		log.Error(err, "Failed to get KubeResourcesMonitor")
+        log.Error(err, "Failed to get KubeResourcesMonitor")
         return reconcile.Result{}, err
     }
-	// Get the Prometheus endpoint from the spec
+    // Get the Prometheus endpoint from the spec
     prometheusEndpoint := instance.Spec.PrometheusEndpoint
-	log.Info("Getting podList")
+    log.Info("Getting podList")
     // Define a new Pod object
     podList := &corev1.PodList{}
     err = r.Client.List(ctx, podList)
     if err != nil {
         return reconcile.Result{}, err
     }
-	log.Info("getting podCount")
+    log.Info("getting podCount")
     // Get the counts of resources
     podCount := len(podList.Items)
     log.Info("getting services")
@@ -105,7 +105,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
     configMapGauge.Set(float64(configMapCount))
     secretGauge.Set(float64(secretCount))
 
-    // Push metrics to Prometheus
+    // Push metrics to Prometheus Pushgateway
     pusher := push.New(prometheusEndpoint, "kuberesourcesmonitor").
         Collector(podGauge).
         Collector(serviceGauge).
@@ -113,16 +113,15 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
         Collector(secretGauge)
 
     if err := pusher.Push(); err != nil {
-        log.Error(err, "Could not push to Prometheus")
+        log.Error(err, "Could not push to Prometheus Pushgateway")
     }
-	log.Info("Successfully reconciled KubeResourcesMonitor")
+    log.Info("Successfully reconciled KubeResourcesMonitor")
     return reconcile.Result{RequeueAfter: time.Minute * 5}, nil
 }
 
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log.Info("SetupWithManager called")
+    r.Log.Info("SetupWithManager called")
     return ctrl.NewControllerManagedBy(mgr).
         For(&monitorv1alpha1.KubeResourcesMonitor{}).
         Complete(r)
 }
-

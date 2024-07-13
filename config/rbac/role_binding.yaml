@@ -1,14 +1,14 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: kuberesourcesmonitor-manager-rolebinding
+  name: controller-manager-rolebinding
   namespace: kuberesourcesmonitor-system
-roleRef:
-  kind: ClusterRole
-  name: manager-role
-  apiGroup: rbac.authorization.k8s.io 
 subjects:
 - kind: ServiceAccount
-  name: kuberesourcesmonitor-controller-manager
+  name: controller-manager
   namespace: kuberesourcesmonitor-system
+roleRef:
+  kind: Role
+  name: controller-manager-role
+  apiGroup: rbac.authorization.k8s.io
 

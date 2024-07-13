@@ -5,6 +5,5 @@ metadata:
   namespace: kuberesourcesmonitor-system
 spec:
   interval: "5m"
-  prometheusEndpoint: "http://prometheus-kube-prometheus-prometheus.monitoring.svc:9090"
-
+  prometheusEndpoint: "http://prometheus-pushgateway.monitoring.svc:9091"
 
