@@ -4,12 +4,14 @@ metadata:
   name: manager-role
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets", "events"]
-  verbs: ["get", "list", "watch", "create", "update", "patch"]
-- apiGroups: ["coordination.k8s.io"]
-  resources: ["leases"]
-  verbs: ["get", "list", "create", "update"]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["monitor.example.com"]
   resources: ["kuberesourcesmonitors"]
   verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
-
+- apiGroups: ["monitor.example.com"]
+  resources: ["kuberesourcesmonitors/status"]
+  verbs: ["get", "update", "patch"]
+- apiGroups: ["monitor.example.com"]
+  resources: ["kuberesourcesmonitors/finalizers"]
+  verbs: ["update"]
