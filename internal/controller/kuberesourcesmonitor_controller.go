@@ -1,19 +1,23 @@
 package controller
 
 import (
-    "context"
-    "time"
-    "github.com/go-logr/logr"
-    "github.com/prometheus/client_golang/prometheus"
-    "github.com/prometheus/client_golang/prometheus/push"
-    "k8s.io/apimachinery/pkg/api/errors"
-    "k8s.io/apimachinery/pkg/runtime"
-    corev1 "k8s.io/api/core/v1"
-    "sigs.k8s.io/controller-runtime/pkg/client"
-    
-    "sigs.k8s.io/controller-runtime/pkg/reconcile"
-    ctrl "sigs.k8s.io/controller-runtime"
-    monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
+	"context"
+	"net/http"
+	"strconv"
+	"time"
+
+	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/client_golang/prometheus/push"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // KubeResourcesMonitorReconciler reconciles a KubeResourcesMonitor object
@@ -114,13 +118,36 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 
     if err := pusher.Push(); err != nil {
         log.Error(err, "Could not push to Prometheus Pushgateway")
+    }else {
+        log.Info("Successfully pushed metrics to Prometheus Pushgateway")
     }
     log.Info("Successfully reconciled KubeResourcesMonitor")
-    return reconcile.Result{RequeueAfter: time.Minute * 5}, nil
+    timeInterval := instance.Spec.Interval
+    interval := 5 // default interval in minutes
+
+    if timeInterval != "" {
+        parsedInterval, err := strconv.Atoi(timeInterval)
+        if err != nil {
+            r.Log.Error(err, "Failed to parse interval, using default", "interval", timeInterval)
+        } else {
+            interval = parsedInterval
+        }
+    }
+
+    return reconcile.Result{RequeueAfter: time.Minute * time.Duration(interval)}, nil
 }
 
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
     r.Log.Info("SetupWithManager called")
+    // Expose the metrics endpoint
+    r.Log.Info("Exposing the metrics endpoint for Prometheus to scrape ")
+    http.Handle("/metrics", promhttp.Handler())
+    go func() {
+        err := http.ListenAndServe(":2112", nil)
+        if err != nil {
+            r.Log.Error(err, "Error starting HTTP server for metrics")
+        }
+    }()
     return ctrl.NewControllerManagedBy(mgr).
         For(&monitorv1alpha1.KubeResourcesMonitor{}).
         Complete(r)
