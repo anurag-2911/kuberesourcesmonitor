@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -122,19 +121,20 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
         log.Info("Successfully pushed metrics to Prometheus Pushgateway")
     }
     log.Info("Successfully reconciled KubeResourcesMonitor")
+    // Parse interval from the instance spec
     timeInterval := instance.Spec.Interval
-    interval := 5 // default interval in minutes
+    interval := 5 * time.Minute // default interval
 
     if timeInterval != "" {
-        parsedInterval, err := strconv.Atoi(timeInterval)
+        parsedInterval, err := time.ParseDuration(timeInterval)
         if err != nil {
-            r.Log.Error(err, "Failed to parse interval, using default", "interval", timeInterval)
+            log.Error(err, "Failed to parse interval, using default", "interval", timeInterval)
         } else {
             interval = parsedInterval
         }
     }
 
-    return reconcile.Result{RequeueAfter: time.Minute * time.Duration(interval)}, nil
+    return reconcile.Result{RequeueAfter: interval}, nil
 }
 
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
