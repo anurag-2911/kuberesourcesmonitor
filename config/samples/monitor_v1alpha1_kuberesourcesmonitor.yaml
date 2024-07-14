@@ -3,7 +3,9 @@ kind: KubeResourcesMonitor
 metadata:
   name: example-kuberesourcesmonitor
   namespace: kuberesourcesmonitor-system
+  
 spec:
   interval: "5m"
   prometheusEndpoint: "http://prometheus-pushgateway.monitoring.svc:9091"
+  ConfigMapName: kuberesourcesmonitor-config
 

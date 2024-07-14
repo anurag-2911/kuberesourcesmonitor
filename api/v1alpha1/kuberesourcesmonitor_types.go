@@ -6,10 +6,9 @@ import (
 
 // KubeResourcesMonitorSpec defines the desired state of KubeResourcesMonitor
 type KubeResourcesMonitorSpec struct {
-    // Add custom fields here
-    Interval string `json:"interval,omitempty"`
-    PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
-
+    Interval            string `json:"interval,omitempty"`
+    PrometheusEndpoint  string `json:"prometheusEndpoint,omitempty"`
+    ConfigMapName       string `json:"configMapName,omitempty"` // Add this line
 }
 
 // KubeResourcesMonitorStatus defines the observed state of KubeResourcesMonitor
@@ -41,4 +40,3 @@ type KubeResourcesMonitorList struct {
 func init() {
     SchemeBuilder.Register(&KubeResourcesMonitor{}, &KubeResourcesMonitorList{})
 }
-
