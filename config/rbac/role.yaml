@@ -8,6 +8,12 @@ rules:
   - ""
   resources:
   - configmaps
+  - cronjobs
+  - deployments
+  - events
+  - jobs
+  - nodes
+  - persistentvolumeclaims
   - pods
   - secrets
   - services
