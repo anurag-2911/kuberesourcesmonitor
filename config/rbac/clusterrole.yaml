@@ -4,7 +4,13 @@ metadata:
   name: manager-role
 rules:
 - apiGroups: [""]
-  resources: ["pods", "services", "configmaps", "secrets"]
+  resources: ["pods", "services", "configmaps", "secrets", "persistentvolumeclaims", "events", "nodes"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["batch"]
+  resources: ["cronjobs"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["monitor.example.com"]
   resources: ["kuberesourcesmonitors"]
