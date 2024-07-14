@@ -3,15 +3,52 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "services", "configmaps", "secrets", "nodes", "persistentvolumeclaims", "events"]
-    verbs: ["get", "list"]
-  - apiGroups: ["apps"]
-    resources: ["daemonsets", "deployments", "replicasets", "statefulsets"]
-    verbs: ["get", "list"]
-  - apiGroups: ["batch"]
-    resources: ["cronjobs", "jobs"]
-    verbs: ["get", "list"]
-  - apiGroups: [""]
-    resources: ["events"]
-    verbs: ["get", "list"]
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  - services
+  - configmaps
+  - secrets
+  - nodes
+  - persistentvolumeclaims
+  - events
+  - replicationcontrollers
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  - daemonsets
+  - replicasets
+  - statefulsets
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors
+  - kuberesourcesmonitors/status
+  - kuberesourcesmonitors/finalizers
+  verbs:
+  - get
+  - list
+  - watch
+  - create
+  - delete
+  - update
+  - patch

@@ -1,3 +1,4 @@
+---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -7,31 +8,19 @@ rules:
   - ""
   resources:
   - configmaps
-  - pods
-  - secrets
-  - services
+  - cronjobs
+  - daemonsets
+  - deployments
+  - events
+  - jobs
   - nodes
   - persistentvolumeclaims
-  - events
-  - replicationcontrollers
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - daemonsets
+  - pods
   - replicasets
+  - replicationcontrollers
+  - secrets
+  - services
   - statefulsets
-  verbs:
-  - get
-  - list
-- apiGroups:
-  - batch
-  resources:
-  - cronjobs
-  - jobs
   verbs:
   - get
   - list
@@ -39,13 +28,25 @@ rules:
   - monitor.example.com
   resources:
   - kuberesourcesmonitors
-  - kuberesourcesmonitors/status
-  - kuberesourcesmonitors/finalizers
   verbs:
-  - get
-  - list
-  - watch
   - create
   - delete
-  - update
+  - get
+  - list
   - patch
+  - update
+  - watch
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - monitor.example.com
+  resources:
+  - kuberesourcesmonitors/status
+  verbs:
+  - get
+  - patch
+  - update
