@@ -1,3 +1,15 @@
+### This project builds a Kubernetes Operator to monitor Kubernetes resources like pods, services, configMaps, cronjobs, secrets, etc, and on a configurable period pushes the metrics to the Prometheus push gateway from there Prometheus can be configured to monitor the metrics sent by the operator. The operator pod logs the same info like number of pods in all the namespaces, the number of nodes, CPU usage, memory usages, cronJobs, etc.
+## Prerequisite
+   # Linux OS, I have used Ubuntu (Ubuntu 22.04.4 LTS) for developing this project
+   # Go run time installed, for this project, I have used go version go1.21.0 linux/amd64
+   # Git
+   # Kubectl
+   # Operator-SDK: operator-sdk version
+      (operator-sdk version: "v1.35.0", commit: "e95abdbd5ccb7ca0fd586e0c6f578e491b0a025b", kubernetes version: "v1.28.0", go version: "go1.21.0",          GOOS:    "linux", GOARCH: "amd64")
+      Note: Make sure the Go version is exactly the same as the one mentioned in the operator SDK version used.
+      (https://sdk.operatorframework.io/docs/installation)
+   # Dockers
+
 
 # Kubernetes Operator to Monitor Cluster Resources and Raise Alerts in Prometheus Alert Manager
 
