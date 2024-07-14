@@ -35,8 +35,9 @@ spec:
           spec:
             description: KubeResourcesMonitorSpec defines the desired state of KubeResourcesMonitor
             properties:
+              configMapName:
+                type: string
               interval:
-                description: Add custom fields here
                 type: string
               prometheusEndpoint:
                 type: string

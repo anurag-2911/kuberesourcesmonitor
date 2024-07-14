@@ -7,5 +7,5 @@ metadata:
 spec:
   interval: "5m"
   prometheusEndpoint: "http://prometheus-pushgateway.monitoring.svc:9091"
-  ConfigMapName: kuberesourcesmonitor-config
+  configMapName: "kuberesourcesmonitor-config"
 

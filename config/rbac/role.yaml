@@ -9,18 +9,14 @@ rules:
   resources:
   - configmaps
   - cronjobs
-  - daemonsets
   - deployments
   - events
   - jobs
   - nodes
   - persistentvolumeclaims
   - pods
-  - replicasets
-  - replicationcontrollers
   - secrets
   - services
-  - statefulsets
   verbs:
   - get
   - list
