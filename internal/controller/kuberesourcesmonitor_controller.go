@@ -6,11 +6,11 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
-	
+
 	"github.com/prometheus/client_golang/prometheus/push"
-	corev1 "k8s.io/api/core/v1"
-	batchv1 "k8s.io/api/batch/v1"
 	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -125,9 +125,8 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 			}
 		}
 	}
-
 	// Node resource usage and conditions
-	var totalCPUUsage, totalMemoryUsage float64
+	var totalCPUUsageMilli, totalMemoryUsageBytes float64
 	var nodeReady, nodeMemoryPressure, nodeDiskPressure float64
 	for _, node := range nodeList.Items {
 		for _, condition := range node.Status.Conditions {
@@ -147,16 +146,22 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 			}
 		}
 		for resourceName, allocatable := range node.Status.Allocatable {
-            if resourceName == corev1.ResourceCPU {
-                totalCPUUsage += float64(allocatable.MilliValue())
-            } else if resourceName == corev1.ResourceMemory {
-                totalMemoryUsage += float64(allocatable.Value())
-            }
-        }
+			if resourceName == corev1.ResourceCPU {
+				totalCPUUsageMilli += float64(allocatable.MilliValue())
+			} else if resourceName == corev1.ResourceMemory {
+				totalMemoryUsageBytes += float64(allocatable.Value())
+			}
+		}
 	}
 
-	// Log the counts
-	log.Info("Resource counts", "Pods", podCount, "Services", serviceCount, "ConfigMaps", configMapCount, "Secrets", secretCount, "CronJobs", cronJobCount, "Deployments", deploymentCount, "Nodes", nodeCount, "PVCs", pvcCount, "Events", eventCount, "Restarts", restartCount, "Crashes", crashCount, "TotalCPUUsage", totalCPUUsage, "TotalMemoryUsage", totalMemoryUsage, "NodeReady", nodeReady, "NodeMemoryPressure", nodeMemoryPressure, "NodeDiskPressure", nodeDiskPressure)
+	// Convert CPU usage from milliCPUs to CPUs
+	totalCPUUsage := totalCPUUsageMilli / 1000.0
+
+	// Convert memory usage from bytes to gigabytes
+	totalMemoryUsage := totalMemoryUsageBytes / (1024.0 * 1024.0 * 1024.0)
+
+	// Log the counts with improved readability
+	log.Info("Resource counts", "Pods", podCount, "Services", serviceCount, "ConfigMaps", configMapCount, "Secrets", secretCount, "CronJobs", cronJobCount, "Deployments", deploymentCount, "Nodes", nodeCount, "PVCs", pvcCount, "Events", eventCount, "Restarts", restartCount, "Crashes", crashCount, "TotalCPUUsage (cores)", totalCPUUsage, "TotalMemoryUsage (GB)", totalMemoryUsage, "NodeReady", nodeReady, "NodeMemoryPressure", nodeMemoryPressure, "NodeDiskPressure", nodeDiskPressure)
 
 	// Define the gauges
 	podGauge := prometheus.NewGauge(prometheus.GaugeOpts{
@@ -287,9 +292,8 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log.Info("SetupWithManager called")
 	// Expose the metrics endpoint
-	
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&monitorv1alpha1.KubeResourcesMonitor{}).
 		Complete(r)
 }
-
