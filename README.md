@@ -1,4 +1,4 @@
-# This project builds a Kubernetes Operator to monitor Kubernetes resources like pods, services, configMaps, cronjobs, secrets, etc, and on a configurable period pushes the metrics to the Prometheus push gateway from there Prometheus can be configured to monitor the metrics sent by the operator. The operator pod logs the same info like the number of pods in all the namespaces, the number of nodes, CPU usage, memory usage, cronJobs, etc.
+#This project builds a Kubernetes Operator to monitor Kubernetes resources like pods, services, configMaps, cronjobs, secrets, etc, and on a configurable period pushes the metrics to the Prometheus push gateway from there Prometheus can be configured to monitor the metrics sent by the operator. The operator pod logs the same info like the number of pods in all the namespaces, the number of nodes, CPU usage, memory usage, cronJobs, etc.
 ## Prerequisite
    ## Linux OS, I have used Ubuntu (Ubuntu 22.04.4 LTS) for developing this project
    ## Go run time installed, for this project, I have used go version go1.21.0 linux/amd64
