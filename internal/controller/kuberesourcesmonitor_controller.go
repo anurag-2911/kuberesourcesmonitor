@@ -2,12 +2,13 @@ package controller
 
 import (
 	"context"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/push"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -32,6 +33,83 @@ type KubeResourcesMonitorReconciler struct {
 // +kubebuilder:rbac:groups=monitor.example.com,resources=kuberesourcesmonitors/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=pods;services;configmaps;secrets;cronjobs;jobs;deployments;nodes;persistentvolumeclaims;events,verbs=get;list
 
+var (
+	// Define Prometheus gauges for monitoring various Kubernetes resources
+	podGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "pod_count",
+		Help: "Number of pods",
+	})
+	serviceGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "service_count",
+		Help: "Number of services",
+	})
+	configMapGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "configmap_count",
+		Help: "Number of configmaps",
+	})
+	secretGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "secret_count",
+		Help: "Number of secrets",
+	})
+	cronJobGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "cronjob_count",
+		Help: "Number of cronjobs",
+	})
+	deploymentGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "deployment_count",
+		Help: "Number of deployments",
+	})
+	nodeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "node_count",
+		Help: "Number of nodes",
+	})
+	nodeReadyGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "node_ready_count",
+		Help: "Number of nodes in ready condition",
+	})
+	nodeMemoryPressureGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "node_memory_pressure_count",
+		Help: "Number of nodes with memory pressure",
+	})
+	nodeDiskPressureGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "node_disk_pressure_count",
+		Help: "Number of nodes with disk pressure",
+	})
+	pvcGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "pvc_count",
+		Help: "Number of PVCs",
+	})
+	eventGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "event_count",
+		Help: "Number of events",
+	})
+	restartGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "restart_count",
+		Help: "Number of container restarts",
+	})
+	crashGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "crash_count",
+		Help: "Number of container crashes",
+	})
+	cpuUsageGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "total_cpu_usage",
+		Help: "Total CPU usage across all nodes",
+	})
+	memoryUsageGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "total_memory_usage",
+		Help: "Total memory usage across all nodes",
+	})
+)
+
+func init() {
+	// Register the gauges with Prometheus's default registry
+	prometheus.MustRegister(podGauge, serviceGauge, configMapGauge, secretGauge, cronJobGauge, deploymentGauge, nodeGauge,
+		nodeReadyGauge, nodeMemoryPressureGauge, nodeDiskPressureGauge, pvcGauge, eventGauge, restartGauge, crashGauge,
+		cpuUsageGauge, memoryUsageGauge)
+}
+
+// Reconcile reads that state of the cluster for a KubeResourcesMonitor object and makes changes based on the state read
+// and what is in the KubeResourcesMonitor.Spec
 func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.Log.WithValues("kuberesourcesmonitor", req.NamespacedName)
 	log.Info("Reconcile function called")
@@ -42,18 +120,17 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err := r.Get(ctx, req.NamespacedName, instance)
 	if err != nil {
 		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Return and don't requeue
 			log.Info("KubeResourcesMonitor resource not found. Ignoring since object must be deleted")
 			return reconcile.Result{}, nil
 		}
+		// Error reading the object - requeue the request.
 		log.Error(err, "Failed to get KubeResourcesMonitor")
 		return reconcile.Result{}, err
 	}
 
-	// Get the Prometheus endpoint from the spec
-	prometheusEndpoint := instance.Spec.PrometheusEndpoint
-
-	// Log fetching config map details
-	log.Info("Fetching ConfigMap", "name", instance.Spec.ConfigMapName)
+	// Get the ConfigMap specified in the KubeResourcesMonitor spec
 	configMap := &corev1.ConfigMap{}
 	err = r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: instance.Spec.ConfigMapName}, configMap)
 	if err != nil {
@@ -63,8 +140,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	metricsToCollect := strings.Split(configMap.Data["metrics"], "\n")
 	log.Info("Metrics to collect from ConfigMap", "metrics", metricsToCollect)
 
-	// Collect resource metrics
-	log.Info("Collecting resource metrics")
+	// Collect various metrics from the cluster
 	podList := &corev1.PodList{}
 	err = r.Client.List(ctx, podList)
 	if err != nil {
@@ -146,6 +222,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	eventCount := len(eventList.Items)
 	log.Info("Collected event metrics", "count", eventCount)
 
+	// Calculate container restart and crash metrics
 	var restartCount int
 	var crashCount int
 	for _, pod := range podList.Items {
@@ -158,7 +235,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	}
 	log.Info("Collected container metrics", "restartCount", restartCount, "crashCount", crashCount)
 
-	// Node resource usage and conditions
+	// Calculate node metrics
 	var totalCPUUsageMilli, totalMemoryUsageBytes float64
 	var nodeReady, nodeMemoryPressure, nodeDiskPressure float64
 	for _, node := range nodeList.Items {
@@ -188,83 +265,14 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	}
 	log.Info("Collected node resource metrics", "totalCPUUsageMilli", totalCPUUsageMilli, "totalMemoryUsageBytes", totalMemoryUsageBytes)
 
-	// Convert CPU usage from milliCPUs to CPUs
+	// Convert CPU usage from milli to cores and memory usage to GB
 	totalCPUUsage := totalCPUUsageMilli / 1000.0
-
-	// Convert memory usage from bytes to gigabytes
 	totalMemoryUsage := totalMemoryUsageBytes / (1024.0 * 1024.0 * 1024.0)
 
-	// Log the counts with improved readability
+	// Log the collected metrics
 	log.Info("Resource counts", "Pods", podCount, "Services", serviceCount, "ConfigMaps", configMapCount, "Secrets", secretCount, "CronJobs", cronJobCount, "Deployments", deploymentCount, "Nodes", nodeCount, "PVCs", pvcCount, "Events", eventCount, "Restarts", restartCount, "Crashes", crashCount, "TotalCPUUsage (cores)", totalCPUUsage, "TotalMemoryUsage (GB)", totalMemoryUsage, "NodeReady", nodeReady, "NodeMemoryPressure", nodeMemoryPressure, "NodeDiskPressure", nodeDiskPressure)
 
-	// Define the gauges
-	log.Info("Defining Prometheus gauges")
-	podGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "pod_count",
-		Help: "Number of pods",
-	})
-	serviceGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "service_count",
-		Help: "Number of services",
-	})
-	configMapGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "configmap_count",
-		Help: "Number of configmaps",
-	})
-	secretGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "secret_count",
-		Help: "Number of secrets",
-	})
-	cronJobGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "cronjob_count",
-		Help: "Number of cronjobs",
-	})
-	deploymentGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "deployment_count",
-		Help: "Number of deployments",
-	})
-	nodeGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_count",
-		Help: "Number of nodes",
-	})
-	nodeReadyGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_ready_count",
-		Help: "Number of nodes in ready condition",
-	})
-	nodeMemoryPressureGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_memory_pressure_count",
-		Help: "Number of nodes with memory pressure",
-	})
-	nodeDiskPressureGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "node_disk_pressure_count",
-		Help: "Number of nodes with disk pressure",
-	})
-	pvcGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "pvc_count",
-		Help: "Number of PVCs",
-	})
-	eventGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "event_count",
-		Help: "Number of events",
-	})
-	restartGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "restart_count",
-		Help: "Number of container restarts",
-	})
-	crashGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "crash_count",
-		Help: "Number of container crashes",
-	})
-	cpuUsageGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "total_cpu_usage",
-		Help: "Total CPU usage across all nodes",
-	})
-	memoryUsageGauge := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "total_memory_usage",
-		Help: "Total memory usage across all nodes",
-	})
-
-	// Set the gauge values
+	// Update Prometheus gauge values with the collected metrics
 	log.Info("Setting Prometheus gauge values")
 	podGauge.Set(float64(podCount))
 	serviceGauge.Set(float64(serviceCount))
@@ -283,34 +291,9 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	cpuUsageGauge.Set(totalCPUUsage)
 	memoryUsageGauge.Set(totalMemoryUsage)
 
-	// Push metrics to Prometheus Pushgateway
-	log.Info("Pushing metrics to Prometheus Pushgateway", "endpoint", prometheusEndpoint)
-	pusher := push.New(prometheusEndpoint, "kuberesourcesmonitor").
-		Collector(podGauge).
-		Collector(serviceGauge).
-		Collector(configMapGauge).
-		Collector(secretGauge).
-		Collector(cronJobGauge).
-		Collector(deploymentGauge).
-		Collector(nodeGauge).
-		Collector(nodeReadyGauge).
-		Collector(nodeMemoryPressureGauge).
-		Collector(nodeDiskPressureGauge).
-		Collector(pvcGauge).
-		Collector(eventGauge).
-		Collector(restartGauge).
-		Collector(crashGauge).
-		Collector(cpuUsageGauge).
-		Collector(memoryUsageGauge)
-
-	if err := pusher.Push(); err != nil {
-		log.Error(err, "Could not push to Prometheus Pushgateway")
-	} else {
-		log.Info("Successfully pushed metrics to Prometheus Pushgateway")
-	}
 	log.Info("Successfully reconciled KubeResourcesMonitor")
 
-	// Parse interval from the instance spec
+	// Set the requeue interval based on the interval specified in the CR spec
 	timeInterval := instance.Spec.Interval
 	interval := 5 * time.Minute // default interval
 
@@ -326,9 +309,18 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	return reconcile.Result{RequeueAfter: interval}, nil
 }
 
+// SetupWithManager sets up the controller with the Manager.
 func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	r.Log.Info("SetupWithManager called")
-	// Expose the metrics endpoint
+
+	// Start a metrics server for Prometheus
+	http.Handle("/metrics", promhttp.Handler())
+	go func() {
+		r.Log.Info("Starting metrics server on port 2112")
+		if err := http.ListenAndServe(":2112", nil); err != nil {
+			r.Log.Error(err, "Error starting HTTP server")
+		}
+	}()
 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&monitorv1alpha1.KubeResourcesMonitor{}).
