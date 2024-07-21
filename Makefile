@@ -1,8 +1,6 @@
 # VERSION defines the project version for the bundle.
 VERSION ?= 0.0.1
-# Build, Push, and Deploy in One Command:
 # make docker-build-push-deploy
-
 # CHANNELS define the bundle channels used in the bundle.
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -149,13 +147,17 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 	$(KUSTOMIZE) build config/crd | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy
-deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy: manifests kustomize ## Deploy controller and additional resources to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+	$(KUBECTL) apply -f config/rbac/clusterrole.yaml
+	$(KUBECTL) rollout restart deployment/kuberesourcesmonitor-controller-manager -n kuberesourcesmonitor-system
 
 .PHONY: undeploy
-undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
+undeploy: ## Undeploy controller and additional resources from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
+	$(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f path/to/your/deployment.yaml
+	$(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f path/to/your/clusterrole.yaml
 
 ##@ Build Dependencies
 
