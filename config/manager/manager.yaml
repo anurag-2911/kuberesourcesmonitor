@@ -62,6 +62,9 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
+        ports:
+        - containerPort: 2112
+          name: metrics
         resources:
           limits:
             cpu: 500m
@@ -71,4 +74,21 @@ spec:
             memory: 64Mi
       serviceAccountName: controller-manager
       terminationGracePeriodSeconds: 10
-
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuberesourcesmonitor-metrics
+  namespace: kuberesourcesmonitor-system
+  labels:
+    app.kubernetes.io/name: kuberesourcesmonitor
+    app.kubernetes.io/instance: kuberesourcesmonitor-metrics
+spec:
+  ports:
+    - port: 2112
+      targetPort: 2112
+      protocol: TCP
+      name: metrics
+  selector:
+    control-plane: kuberesourcesmonitor-controller-manager
+  type: ClusterIP
