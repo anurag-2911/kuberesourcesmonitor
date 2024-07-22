@@ -1,0 +1,44 @@
+# custom-values.yaml
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager.monitoring.svc:9093
+
+ruleFiles:
+  - /etc/prometheus/prometheus-alert-rules.yaml
+
+serverFiles:
+  alerts:
+    prometheus-alert-rules.yaml: |-
+      groups:
+      - name: pod.rules
+        rules:
+        - alert: HighPodCounts
+          expr: pod_count > 100
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High Pod Count Detected"
+            description: "Pod count is greater than 100 for more than 5 minutes."
+
+additionalScrapeConfigs: |-
+  - job_name: 'kuberesourcesmonitor'
+    kubernetes_sd_configs:
+      - role: endpoints
+    relabel_configs:
+      - source_labels: [__meta_kubernetes_namespace]
+        action: keep
+        regex: kuberesourcesmonitor-system
+      - source_labels: [__meta_kubernetes_service_label_app]
+        action: keep
+        regex: kuberesourcesmonitor-metrics
+      - source_labels: [__meta_kubernetes_endpoint_port_name]
+        action: keep
+        regex: metrics
+      - source_labels: [__address__, __meta_kubernetes_endpoint_port_name]
+        action: replace
+        target_label: __address__
+        regex: (.+):.*;(metrics)
+        replacement: ${1}:2112
