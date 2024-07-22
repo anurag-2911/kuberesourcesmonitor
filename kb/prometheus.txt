@@ -1,0 +1,165 @@
+Install 
+
+To install Prometheus using the Helm chart, follow these steps:
+
+Step 1: Install Helm
+
+If you haven't already installed Helm, follow the [official Helm installation guide](https://helm.sh/docs/intro/install/).
+
+Step 2: Add the Prometheus Community Helm Repository
+
+Add the Prometheus community Helm charts repository to your Helm configuration:
+
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+
+
+Step 3: Create the Monitoring Namespace
+
+Create a namespace for the Prometheus installation, if it does not already exist:
+
+
+kubectl create namespace monitoring
+
+
+ Step 4: Install Prometheus using Helm
+
+Install the Prometheus Helm chart. This will install the Prometheus Operator along with Prometheus, Alertmanager, and Grafana:
+
+
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring
+
+
+ Step 5: Verify the Installation
+
+Check the status of the installation and ensure all components are running:
+
+
+kubectl get all -n monitoring
+
+
+ Accessing the Prometheus, Grafana, and Alertmanager UIs
+
+# Prometheus UI
+
+Port-forward the Prometheus service to access the Prometheus UI:
+
+
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
+
+
+Open your browser and navigate to `http://localhost:9090`.
+
+# Grafana UI
+
+Grafana is also installed as part of the `kube-prometheus-stack` chart. To access the Grafana UI:
+
+Port-forward the Grafana service:
+
+
+kubectl port-forward -n monitoring svc/prometheus-grafana 3000:80
+
+
+Open your browser and navigate to `http://localhost:3000`.
+
+The default Grafana login credentials are:
+- Username: admin
+- Password: prom-operator
+
+# Alertmanager UI
+
+Port-forward the Alertmanager service:
+
+
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-alertmanager 9093:9093
+
+
+Open your browser and navigate to `http://localhost:9093`.
+
+ 
+Uninstall:
+helm uninstall prometheus -n monitoring
+kubectl delete namespace monitoring
+
+
+
+
+
+cleanup:
+
+To completely clean up and redeploy Prometheus in the `monitoring` namespace, you can follow these steps. 
+This process will remove all Prometheus resources and then set them up again from scratch.
+
+ Step 1: Delete the Prometheus Deployment
+
+First, delete all Prometheus-related resources in the `monitoring` namespace. This includes Prometheus, Alertmanager, Grafana, and any related Services, Pods, and ConfigMaps.
+
+# Delete Prometheus Resources
+
+
+kubectl delete prometheus --all -n monitoring
+kubectl delete alertmanager --all -n monitoring
+kubectl delete service --all -n monitoring
+kubectl delete pod --all -n monitoring
+kubectl delete configmap --all -n monitoring
+kubectl delete secret --all -n monitoring
+kubectl delete servicemonitor --all -n monitoring
+kubectl delete podmonitor --all -n monitoring
+kubectl delete prometheusrule --all -n monitoring
+
+
+ Step 2: Delete the Namespace (Optional)
+
+If you want to ensure everything is removed, you can delete the entire `monitoring` namespace. 
+This will remove all resources within that namespace.
+
+
+kubectl delete namespace monitoring
+
+
+Then, recreate the `monitoring` namespace:
+
+
+kubectl create namespace monitoring
+
+
+ Step 3: Redeploy Prometheus
+
+You can redeploy Prometheus using Helm, which is a common method for deploying Prometheus Operator and related components. If you haven't installed Helm yet, you can follow the [official Helm installation guide](https://helm.sh/docs/intro/install/).
+
+# Add the Prometheus Community Helm Repo
+
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+
+
+# Install Prometheus
+
+
+helm install prometheus prometheus-community/kube-prometheus-stack -n monitoring --create-namespace
+
+
+This will deploy the Prometheus Operator along with Prometheus, Alertmanager, and Grafana.
+
+ Step 4: Verify the Deployment
+
+After deploying Prometheus, you can check the status of the deployment:
+
+
+kubectl get all -n monitoring
+
+
+ Step 5: Port-forward to Access Prometheus UI
+
+To access the Prometheus UI, you can port-forward the Prometheus service:
+
+
+kubectl port-forward -n monitoring svc/prometheus-kube-prometheus-prometheus 9090:9090
+
+
+Open your browser and navigate to `http://localhost:9090`.
+
+ 
