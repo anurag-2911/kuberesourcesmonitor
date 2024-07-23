@@ -1,3 +1,4 @@
+# to build,push and deploy: docker-build-push-deploy ( first do docker login)
 # VERSION defines the project version for the bundle.
 VERSION ?= 0.0.1
 # make docker-build-push-deploy
@@ -150,8 +151,14 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 deploy: manifests kustomize ## Deploy controller and additional resources to the K8s cluster specified in ~/.kube/config.
 	cd config/manager && $(KUSTOMIZE) edit set image controller=${IMG}
 	$(KUSTOMIZE) build config/default | $(KUBECTL) apply -f -
+	$(KUBECTL) apply -f config/samples/
+	$(KUSTOMIZE) build config/manager | kubectl apply -f -
+	$(KUBECTL) apply -f config/prometheus/
+	$(KUSTOMIZE) build config/rbac/ | kubectl apply -f -
 	$(KUBECTL) apply -f config/rbac/clusterrole.yaml
+	$(KUBECTL) apply -f config/rbac/clusterrolebinding.yaml
 	$(KUBECTL) rollout restart deployment/kuberesourcesmonitor-controller-manager -n kuberesourcesmonitor-system
+	@echo "Deployment successfully completed."
 
 .PHONY: undeploy
 undeploy: ## Undeploy controller and additional resources from the K8s cluster specified in ~/.kube/config.
@@ -266,3 +273,27 @@ catalog-push: ## Push a catalog image.
 # New target to build, push, and deploy in one go
 .PHONY: docker-build-push-deploy
 docker-build-push-deploy: docker-build docker-push deploy ## Build, push and deploy the Docker image.
+	@echo " "
+	@echo "Build, push, and deployment successfully completed."
+
+
+.PHONY: cleanup
+cleanup: ## Cleanup all resources related to the operator.
+	# Delete all custom resources
+	$(KUBECTL) delete --ignore-not-found $(shell $(KUBECTL) get kuberesourcesmonitors.monitor.example.com -o name -n kuberesourcesmonitor-system) -n kuberesourcesmonitor-system
+
+	# Delete the CRD
+	$(KUBECTL) delete crd kuberesourcesmonitors.monitor.example.com
+
+	# Delete all resources in the namespace
+	$(KUBECTL) delete all --all -n kuberesourcesmonitor-system
+
+	# Delete the namespace (if you want to remove the namespace as well)
+	$(KUBECTL) delete namespace kuberesourcesmonitor-system
+
+	# Delete the cluster role and cluster role binding
+	$(KUBECTL) delete clusterrole manager-role
+	$(KUBECTL) delete clusterrolebinding manager-rolebinding
+	@echo " "
+	@echo "Cleanup successfully completed."
+

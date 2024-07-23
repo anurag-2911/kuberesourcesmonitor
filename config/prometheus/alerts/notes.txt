@@ -1,3 +1,0 @@
-
-
-helm upgrade prometheus prometheus-community/kube-prometheus-stack -f values.yaml -n monitoring
