@@ -16,4 +16,27 @@ From the path kuberesourcesmonitor/charts run the commands
 6. To install the resources in custom namespace,for example: kuberesourcesmonitor-system:
     kubectl create namespace kuberesourcesmonitor-system
     helm install kuberm ./kuberesourcesmonitor --namespace kuberesourcesmonitor-system
+    helm uninstall kuberm ./kuberesourcesmonitor --namespace kuberesourcesmonitor-system
+
+Adding helm chart to public repo:
+
+1. Create a public repo in github "helm-charts"
+2. git clone https://github.com/<username>/helm-charts.git
+3. git checkout --orphan gh-pages
+4. copy kuberesourcesmonitor-0.1.0.tgz by running /kuberesourcesmonitor/charts$ helm package kuberesourcesmonitor/ to helm-charts$ 
+5. helm repo index . in helm-charts$ 
+6. push tha changes to remote origin.(git push origin gh-pages)
+7. Enable GitHub Pages
+   Go to the settings of the GitHub repository on GitHub, 
+   scroll down to the "GitHub Pages" section, and select the gh-pages branch as the source.
+
+8. Access the Helm Chart Repository
+   Once GitHub Pages is enabled, Helm repository will be available at,for example, https://anurag-2911.github.io/helm-charts/index.yaml.
+   
+
+Install helm from public repo
+1.helm repo add kuberm https://anurag-2911.github.io/helm-charts/
+2.helm repo update
+3.helm install my-monitoring kuberm/kuberesourcesmonitor
+4.
 
