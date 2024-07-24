@@ -1,63 +1,46 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: kuberesourcesmonitor-controller-manager
-  namespace: kuberesourcesmonitor-system
+  name: {{ include "kuberesourcesmonitor.fullname" . }}
   labels:
-    control-plane: kuberesourcesmonitor-controller-manager
-    app.kubernetes.io/name: deployment
-    app.kubernetes.io/instance: kuberesourcesmonitor-controller-manager
-    app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: kuberesourcesmonitor
-    app.kubernetes.io/part-of: kuberesourcesmonitor
-    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/name: {{ include "kuberesourcesmonitor.name" . }}
+    helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
 spec:
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      control-plane: kuberesourcesmonitor-controller-manager
-  replicas: 1
+      app: {{ include "kuberesourcesmonitor.name" . }}
   template:
     metadata:
-      annotations:
-        kubectl.kubernetes.io/default-container: manager
       labels:
-        control-plane: kuberesourcesmonitor-controller-manager
+        app: {{ include "kuberesourcesmonitor.name" . }}
     spec:
-      securityContext:
-        runAsNonRoot: true
+      serviceAccountName: {{ include "kuberesourcesmonitor.serviceAccountName" . }}
       containers:
-      - command:
-        - /manager
-        args:
-        - --leader-elect
-        image: anurag2911/kuberesourcesmonitor:latest
-        name: manager
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - "ALL"
-        livenessProbe:
-          httpGet:
-            path: /healthz
-            port: 8081
-          initialDelaySeconds: 15
-          periodSeconds: 20
-        readinessProbe:
-          httpGet:
-            path: /readyz
-            port: 8081
-          initialDelaySeconds: 5
-          periodSeconds: 10
-        ports:
-        - containerPort: 2112
-          name: metrics
-        resources:
-          limits:
-            cpu: 500m
-            memory: 128Mi
-          requests:
-            cpu: 10m
-            memory: 64Mi
-      serviceAccountName: controller-manager
-      terminationGracePeriodSeconds: 10
+        - name: manager
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi
