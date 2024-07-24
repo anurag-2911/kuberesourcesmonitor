@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ include "kuberesourcesmonitor.fullname" . }}
+  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
   labels:
     app.kubernetes.io/name: {{ include "kuberesourcesmonitor.name" . }}
     helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}

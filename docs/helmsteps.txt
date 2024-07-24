@@ -1,0 +1,14 @@
+From the path kuberesourcesmonitor/charts run the commands
+
+1. Lint the Helm Chart:
+    helm lint ./kuberesourcesmonitor
+2. Dry Run the Helm Chart Installation:
+    helm install kuberm --dry-run --debug ./kuberesourcesmonitor
+3. Install the Helm Chart:
+    helm install kuberm ./kuberesourcesmonitor
+
+4. Verify the Installation:
+    kubectl get all -n 
+
+5. helm uninstall:
+    helm uninstall kuberm

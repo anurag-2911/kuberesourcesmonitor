@@ -2,6 +2,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ include "kuberesourcesmonitor.fullname" . }}-manager-rolebinding
+  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
   labels:
     app.kubernetes.io/name: {{ include "kuberesourcesmonitor.name" . }}
     helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}
