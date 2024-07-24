@@ -1,0 +1,8 @@
+apiVersion: v2
+name: kuberesourcesmonitor
+description: A Helm chart for deploying kuberesourcesmonitor operator
+version: 0.1.0
+appVersion: "0.1.0"
+maintainers:
+  - name: Anurag
+    email: anurag.hcu@gmail.com

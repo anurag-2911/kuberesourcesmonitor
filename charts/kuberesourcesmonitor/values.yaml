@@ -1,0 +1,21 @@
+replicaCount: 1
+
+image:
+  repository: anurag2911/kuberesourcesmonitor
+  tag: latest
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 2112
+
+serviceAccount:
+  create: true
+  name: ""
+
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+    interval: 30s
+    labels: {}

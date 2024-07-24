@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kuberesourcesmonitor-servicemonitor
+  namespace: kuberesourcesmonitor-system
+  labels:
+    release: prometheus
+spec:
+  selector:
+    matchLabels:
+      app: kuberesourcesmonitor-metrics
+  endpoints:
+    - port: metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - kuberesourcesmonitor-system
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kuberesourcesmonitor-metrics
+  namespace: kuberesourcesmonitor-system
+  labels:
+    app: kuberesourcesmonitor-metrics
+spec:
+  ports:
+    - port: 2112
+      targetPort: 2112
+      protocol: TCP
+      name: metrics
+  selector:
+    control-plane: kuberesourcesmonitor-controller-manager
+  type: ClusterIP
