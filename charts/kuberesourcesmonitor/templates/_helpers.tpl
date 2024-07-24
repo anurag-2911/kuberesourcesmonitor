@@ -27,3 +27,10 @@ Generate the name of the ServiceAccount to use.
 {{ include "kuberesourcesmonitor.fullname" . }}-sa
 {{- end -}}
 {{- end -}}
+
+{{/*
+Include the chart version.
+*/}}
+{{- define "kuberesourcesmonitor.chart" -}}
+{{ .Chart.Name }}-{{ .Chart.Version }}
+{{- end -}}
