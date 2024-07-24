@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kuberesourcesmonitor.fullname" . }}
+  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
+  labels:
+    app.kubernetes.io/name: {{ include "kuberesourcesmonitor.name" . }}
+    helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "kuberesourcesmonitor.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "kuberesourcesmonitor.name" . }}
+    spec:
+      serviceAccountName: {{ include "kuberesourcesmonitor.serviceAccountName" . }}
+      containers:
+        - name: manager
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.port }}
+              name: metrics
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8081
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 64Mi

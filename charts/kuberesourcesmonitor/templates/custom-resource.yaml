@@ -2,10 +2,8 @@ apiVersion: monitor.example.com/v1alpha1
 kind: KubeResourcesMonitor
 metadata:
   name: example-kuberesourcesmonitor
-  namespace: kuberesourcesmonitor-system
-  
+  namespace: {{ .Release.Namespace }}
 spec:
   interval: "5m"
   prometheusEndpoint: "2112"
   configMapName: "kuberesourcesmonitor-config"
-

@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "kuberesourcesmonitor.fullname" . }}-manager-rolebinding
+  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
+  labels:
+    app.kubernetes.io/name: {{ include "kuberesourcesmonitor.name" . }}
+    helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+subjects:
+- kind: ServiceAccount
+  name: {{ include "kuberesourcesmonitor.serviceAccountName" . }}
+  namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "kuberesourcesmonitor.fullname" . }}-manager-role
