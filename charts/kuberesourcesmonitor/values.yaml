@@ -11,7 +11,7 @@ service:
 
 serviceAccount:
   create: true
-  name: ""  # Specify a name to use a custom service account name
+  name: ""  
 
 prometheus:
   enabled: true

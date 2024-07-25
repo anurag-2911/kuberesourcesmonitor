@@ -1,11 +1,11 @@
 From the path kuberesourcesmonitor/charts run the commands
 
-1. Lint the Helm Chart:
-    helm lint ./kuberesourcesmonitor
+1. Lint the Helm Chart @ folder charts:
+    helm lint kuberesourcesmonitor
 2. Dry Run the Helm Chart Installation:
-    helm install kuberm --dry-run --debug ./kuberesourcesmonitor
+    helm install kuberm --dry-run --debug kuberesourcesmonitor
 3. Install the Helm Chart:
-    helm install kuberm ./kuberesourcesmonitor
+    helm install kuberm kuberesourcesmonitor
 
 4. Verify the Installation:
     kubectl get all -n 
@@ -46,12 +46,15 @@ Install helm from public repo
     verify: 
     kubectl get all -n kuberesourcesmonitor-system
     uninstall:
-    helm uninstall kubemntr
+    helm uninstall kubemntr --namespace kuberesourcesmonitor-system
     kubectl delete namespace kuberesourcesmonitor-system
+
+    List the helm chart:
+    helm list --namespace kuberesourcesmonitor-system
 
 6. Port forward the requests and verify that the controller is updating the metrics to the end point
     kubectl get pods -n kuberesourcesmonitor-system
-
+    for example:
     kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor-system
 
     verify:

@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "kuberesourcesmonitor.fullname" . }}-servicemonitor
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ include "kuberesourcesmonitor.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "kuberesourcesmonitor.name" . }}
+  endpoints:
+    - port: metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}

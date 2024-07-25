@@ -34,3 +34,10 @@ Include the chart version.
 {{- define "kuberesourcesmonitor.chart" -}}
 {{ .Chart.Name }}-{{ .Chart.Version }}
 {{- end -}}
+
+{{/*
+Include the chart's part-of label.
+*/}}
+{{- define "kuberesourcesmonitor.partOf" -}}
+{{- include "kuberesourcesmonitor.fullname" . -}}
+{{- end -}}

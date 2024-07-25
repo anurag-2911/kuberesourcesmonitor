@@ -1,30 +1,8 @@
-{{- if .Values.prometheus.servicemonitor.enabled }}
-apiVersion: monitoring.coreos.com/v1
-kind: ServiceMonitor
-metadata:
-  name: {{ include "kuberesourcesmonitor.fullname" . }}-servicemonitor
-  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
-  labels:
-    app: {{ include "kuberesourcesmonitor.name" . }}
-    release: {{ .Release.Name }}
-spec:
-  selector:
-    matchLabels:
-      app: {{ include "kuberesourcesmonitor.name" . }}
-  endpoints:
-    - port: metrics
-      interval: {{ .Values.prometheus.servicemonitor.interval }}
-  namespaceSelector:
-    matchNames:
-      - {{ .Release.Namespace }}
-{{- end }}
-
----
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "kuberesourcesmonitor.fullname" . }}-metrics
-  namespace: {{ .Release.Namespace | default "kuberesourcesmonitor-system" }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "kuberesourcesmonitor.name" . }}
     helm.sh/chart: {{ include "kuberesourcesmonitor.chart" . }}
