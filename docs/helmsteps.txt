@@ -38,5 +38,25 @@ Install helm from public repo
 1.helm repo add kuberm https://anurag-2911.github.io/helm-charts/
 2.helm repo update
 3.helm install my-monitoring kuberm/kuberesourcesmonitor
-4.
+4.uninstall :
+    helm uninstall my-monitoring
+5.Install the Helm Chart in a Specific Namespace
+    kubectl create namespace kuberesourcesmonitor-system
+    helm install kubemntr kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor-system
+    verify: 
+    kubectl get all -n kuberesourcesmonitor-system
+    uninstall:
+    helm uninstall kubemntr
+    kubectl delete namespace kuberesourcesmonitor-system
+
+6. Port forward the requests and verify that the controller is updating the metrics to the end point
+    kubectl get pods -n kuberesourcesmonitor-system
+
+    kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor-system
+
+    verify:
+    http://localhost:8080/metrics
+
+7. 
+
 
