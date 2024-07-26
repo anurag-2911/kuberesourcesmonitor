@@ -1,0 +1,33 @@
+1. Add Helm Chart Repository
+    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+    helm repo update
+
+
+2. Install Prometheus
+    helm install kube-prometheus-stack prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+
+
+3. Verify the Installation
+    helm status prometheus -n monitoring
+    kubectl get pods -n monitoring
+4. Accessing Prometheus UI
+    kubectl port-forward -n monitoring service/kube-prometheus-stack-prometheus 9090:9090
+
+5. Accessing Grafana:
+    kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3000:80
+    
+    visit http://localhost:3000 in your web browser. The default login credentials are usually:
+
+    Username: admin
+    Password: prom-operator 
+    (can find the password by checking the Grafana secret: 
+    kubectl get secret -n monitoring kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode; echo).
+
+6. Uninstall the Helm Chart:
+    helm uninstall kube-prometheus-stack --namespace monitoring
+    Verify Uninstallation:
+    kubectl get all -n monitoring
+
+
+
+
