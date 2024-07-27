@@ -26,30 +26,34 @@ Adding helm chart to public repo:
 1. Create a public repo in github "helm-charts"
 2. git clone https://github.com/<username>/helm-charts.git
 3. git checkout --orphan gh-pages
-4. copy kuberesourcesmonitor-0.1.0.tgz by running /kuberesourcesmonitor/charts$ helm package kuberesourcesmonitor/ to helm-charts$ 
+4. copy kuberesourcesmonitor-0.1.0.tgz by running 
+    /kuberesourcesmonitor/charts$ helm package kuberesourcesmonitor/ 
+    to helm-charts local repo 
 5. helm repo index . in helm-charts$ 
 6. push tha changes to remote origin.(git push origin gh-pages)
 7. Enable GitHub Pages
    Go to the settings of the GitHub repository on GitHub, 
    scroll down to the "GitHub Pages" section, and select the gh-pages branch as the source.
+   verify the changes here: https://anurag-2911.github.io/helm-charts/index.yaml
 
 8. Access the Helm Chart Repository
-   Once GitHub Pages is enabled, Helm repository will be available at,for example, https://anurag-2911.github.io/helm-charts/index.yaml.
+   Once GitHub Pages is enabled, Helm repository will be available at,
+   for example, https://anurag-2911.github.io/helm-charts/index.yaml.
    
 
 Install helm from public repo
-1.helm repo add kuberm https://anurag-2911.github.io/helm-charts/
+1.helm repo add kuberm https://anurag-2911.github.io/helm-charts
 2.helm repo update
 3.helm install kuberm kuberm/kuberesourcesmonitor
 4.uninstall :
     helm uninstall kuberm
 5.Install the Helm Chart in a Specific Namespace
-    kubectl create namespace kuberesourcesmonitor-system
+    kubectl create namespace kuberesourcesmonitor
     helm install kubemntr kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack 
     verify: 
     kubectl get all -n kuberesourcesmonitor
     uninstall:
-    helm uninstall kubemntr --namespace kuberesourcesmonitor-system
+    helm uninstall kuberm --namespace kuberesourcesmonitor-system
     kubectl delete namespace kuberesourcesmonitor-system
 
     List the helm chart:
