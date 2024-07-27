@@ -1,0 +1,8 @@
+1. kubectl get all -n kuberesourcesmonitor-system
+2. kubectl get servicemonitor -n kuberesourcesmonitor-system
+3. kubectl get crds -n kuberesourcesmonitor-system
+4. kubectl get pods -n kuberesourcesmonitor-system
+   then for example 
+   kubectl port-forward pod/podname 8080:2112 -n kuberesourcesmonitor-system
+   http://localhost:8080/metrics
+5.

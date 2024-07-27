@@ -270,7 +270,7 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
-# New target to build, push, and deploy in one go
+# New target to build, push, and deploy in one go: make docker-build-push-deploy
 .PHONY: docker-build-push-deploy
 docker-build-push-deploy: docker-build docker-push deploy ## Build, push and deploy the Docker image.
 	@echo " "
