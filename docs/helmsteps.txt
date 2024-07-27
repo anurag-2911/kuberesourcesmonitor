@@ -40,14 +40,14 @@ Adding helm chart to public repo:
 Install helm from public repo
 1.helm repo add kuberm https://anurag-2911.github.io/helm-charts/
 2.helm repo update
-3.helm install my-monitoring kuberm/kuberesourcesmonitor
+3.helm install kuberm kuberm/kuberesourcesmonitor
 4.uninstall :
-    helm uninstall my-monitoring
+    helm uninstall kuberm
 5.Install the Helm Chart in a Specific Namespace
     kubectl create namespace kuberesourcesmonitor-system
-    helm install kubemntr kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor-system
+    helm install kubemntr kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack 
     verify: 
-    kubectl get all -n kuberesourcesmonitor-system
+    kubectl get all -n kuberesourcesmonitor
     uninstall:
     helm uninstall kubemntr --namespace kuberesourcesmonitor-system
     kubectl delete namespace kuberesourcesmonitor-system
