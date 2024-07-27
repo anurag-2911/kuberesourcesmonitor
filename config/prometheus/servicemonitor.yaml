@@ -4,7 +4,7 @@ metadata:
   name: kuberesourcesmonitor-service-monitor
   namespace: kuberesourcesmonitor-system
   labels:
-    release: prometheus
+    release: kube-prometheus-stack ## should match with meta.helm.sh/release-name of kubectl get prometheus -n monitoring -o yaml
 spec:
   selector:
     matchLabels:
@@ -16,20 +16,3 @@ spec:
     matchNames:
       - kuberesourcesmonitor-system
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: kuberesourcesmonitor-metrics
-  namespace: kuberesourcesmonitor-system
-  labels:
-    app: kuberesourcesmonitor-metrics
-spec:
-  ports:
-    - port: 2112
-      targetPort: 2112
-      protocol: TCP
-      name: metrics
-  selector:
-    control-plane: kuberesourcesmonitor-controller-manager
-  type: ClusterIP

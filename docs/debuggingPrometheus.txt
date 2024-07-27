@@ -1,0 +1,311 @@
+To check and review the Prometheus configuration, including the `prometheus.yml` file or its equivalent ConfigMap, 
+follow these steps:
+
+ 1. Identify the Prometheus ConfigMap
+
+    Prometheus configurations are typically stored in a ConfigMap within the Kubernetes cluster. 
+    The exact name can vary, but it often includes "prometheus" or the release name used when deploying Prometheus.
+
+ 2. Access the ConfigMap
+
+    You can view the contents of the ConfigMap using the `kubectl get` command:
+
+1. List the ConfigMaps in the namespace where Prometheus is deployed (often `monitoring`):
+
+   
+   kubectl get configmaps -n monitoring
+   
+
+2. Find the relevant ConfigMap for Prometheus, often named 
+        something like `prometheus-<release-name>` or `prometheus-server`.
+
+3. Describe or Get the ConfigMap to view its contents:
+
+   
+   kubectl describe configmap <configmap-name> -n monitoring
+   
+
+   Or to see the full YAML:
+
+   
+   kubectl get configmap <configmap-name> -n monitoring -o yaml
+   
+
+ 3. Review the ConfigMap Contents
+
+    Inside the ConfigMap, look for the Prometheus configuration section, 
+    typically stored under a key like `prometheus.yml`. This configuration defines various scrape jobs and settings.
+
+ 4. Scrape Configuration
+
+In the Prometheus configuration, check for the following:
+
+- Scrape Jobs: Ensure there is a scrape job configured for your `ServiceMonitor` or specific service. It might look like:
+
+  yaml
+  scrape_configs:
+    - job_name: 'kuberesourcesmonitor'
+      kubernetes_sd_configs:
+        - role: endpoints
+      relabel_configs:
+        - source_labels: [__meta_kubernetes_service_label_app]
+          action: keep
+          regex: kuberesourcesmonitor-metrics
+        - source_labels: [__meta_kubernetes_namespace]
+          action: keep
+          regex: kuberesourcesmonitor-system
+  
+
+  - job_name: A label for this scrape job.
+  - kubernetes_sd_configs: Specifies that Prometheus should use Kubernetes service discovery.
+  - relabel_configs: Filters and transforms the discovered labels to determine what to scrape. Ensure this matches the labels in your `ServiceMonitor` and `Service`.
+
+ 5. Updating the ConfigMap
+
+If you need to make changes:
+
+- Edit the ConfigMap directly if allowed:
+
+  
+  kubectl edit configmap <configmap-name> -n monitoring
+  
+
+- Use Helm: If Prometheus was deployed using Helm, update the values file and redeploy.
+
+  
+  helm upgrade <release-name> prometheus-community/prometheus -f values.yaml
+  
+
+  Replace `<release-name>` with your Prometheus release name and `values.yaml` with your configuration file.
+
+ 6. Reload Prometheus Configuration
+
+Prometheus needs to reload its configuration to apply changes. This can typically be done via:
+
+- Prometheus Operator: It automatically reloads the configuration when the ConfigMap changes.
+- Manual Reload: Trigger a reload by sending a `SIGHUP` 
+    to the Prometheus process or using a provided endpoint if Prometheus is configured for web-based reloads. 
+
+Ensure to validate that the new configuration is applied by checking the Prometheus logs or the 
+Prometheus UI under the "Targets" section to see if your service is being scraped.
+
+
+kubectl get prometheus -n monitoring -o yaml
+apiVersion: v1
+items:
+- apiVersion: monitoring.coreos.com/v1
+  kind: Prometheus
+  metadata:
+    annotations:
+      meta.helm.sh/release-name: kube-prometheus-stack ## this name ServiceMonitor label
+      meta.helm.sh/release-namespace: monitoring
+    creationTimestamp: "2024-07-27T01:54:17Z"
+    generation: 1
+    labels:
+      app: kube-prometheus-stack-prometheus
+      app.kubernetes.io/instance: kube-prometheus-stack
+      app.kubernetes.io/managed-by: Helm
+      app.kubernetes.io/part-of: kube-prometheus-stack
+      app.kubernetes.io/version: 61.3.2
+      chart: kube-prometheus-stack-61.3.2
+      heritage: Helm
+      release: kube-prometheus-stack
+    managedFields:
+    - apiVersion: monitoring.coreos.com/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:status:
+          f:availableReplicas: {}
+          f:conditions:
+            k:{"type":"Available"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:message: {}
+              f:observedGeneration: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+            k:{"type":"Reconciled"}:
+              .: {}
+              f:lastTransitionTime: {}
+              f:message: {}
+              f:observedGeneration: {}
+              f:reason: {}
+              f:status: {}
+              f:type: {}
+          f:paused: {}
+          f:replicas: {}
+          f:selector: {}
+          f:shardStatuses:
+            k:{"shardID":"0"}:
+              .: {}
+              f:availableReplicas: {}
+              f:replicas: {}
+              f:shardID: {}
+              f:unavailableReplicas: {}
+              f:updatedReplicas: {}
+          f:shards: {}
+          f:unavailableReplicas: {}
+          f:updatedReplicas: {}
+      manager: PrometheusOperator
+      operation: Apply
+      subresource: status
+      time: "2024-07-27T09:02:54Z"
+    - apiVersion: monitoring.coreos.com/v1
+      fieldsType: FieldsV1
+      fieldsV1:
+        f:metadata:
+          f:annotations:
+            .: {}
+            f:meta.helm.sh/release-name: {}
+            f:meta.helm.sh/release-namespace: {}
+          f:labels:
+            .: {}
+            f:app: {}
+            f:app.kubernetes.io/instance: {}
+            f:app.kubernetes.io/managed-by: {}
+            f:app.kubernetes.io/part-of: {}
+            f:app.kubernetes.io/version: {}
+            f:chart: {}
+            f:heritage: {}
+            f:release: {}
+        f:spec:
+          .: {}
+          f:alerting:
+            .: {}
+            f:alertmanagers: {}
+          f:automountServiceAccountToken: {}
+          f:enableAdminAPI: {}
+          f:evaluationInterval: {}
+          f:externalUrl: {}
+          f:hostNetwork: {}
+          f:image: {}
+          f:listenLocal: {}
+          f:logFormat: {}
+          f:logLevel: {}
+          f:paused: {}
+          f:podMonitorNamespaceSelector: {}
+          f:podMonitorSelector: {}
+          f:portName: {}
+          f:probeNamespaceSelector: {}
+          f:probeSelector: {}
+          f:replicas: {}
+          f:retention: {}
+          f:routePrefix: {}
+          f:ruleNamespaceSelector: {}
+          f:ruleSelector: {}
+          f:scrapeConfigNamespaceSelector: {}
+          f:scrapeConfigSelector: {}
+          f:scrapeInterval: {}
+          f:securityContext:
+            .: {}
+            f:fsGroup: {}
+            f:runAsGroup: {}
+            f:runAsNonRoot: {}
+            f:runAsUser: {}
+            f:seccompProfile:
+              .: {}
+              f:type: {}
+          f:serviceAccountName: {}
+          f:serviceMonitorNamespaceSelector: {}
+          f:serviceMonitorSelector: {}
+          f:shards: {}
+          f:tsdb:
+            .: {}
+            f:outOfOrderTimeWindow: {}
+          f:version: {}
+          f:walCompression: {}
+      manager: helm
+      operation: Update
+      time: "2024-07-27T01:54:17Z"
+    name: kube-prometheus-stack-prometheus
+    namespace: monitoring
+    resourceVersion: "3059857"
+    uid: 3e7d863e-fdbe-46b3-8a97-374ec969bad6
+  spec:
+    alerting:
+      alertmanagers:
+      - apiVersion: v2
+        name: kube-prometheus-stack-alertmanager
+        namespace: monitoring
+        pathPrefix: /
+        port: http-web
+    automountServiceAccountToken: true
+    enableAdminAPI: false
+    evaluationInterval: 30s
+    externalUrl: http://kube-prometheus-stack-prometheus.monitoring:9090
+    hostNetwork: false
+    image: quay.io/prometheus/prometheus:v2.53.1
+    listenLocal: false
+    logFormat: logfmt
+    logLevel: info
+    paused: false
+    podMonitorNamespaceSelector: {}
+    podMonitorSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    portName: http-web
+    probeNamespaceSelector: {}
+    probeSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    replicas: 1
+    retention: 10d
+    routePrefix: /
+    ruleNamespaceSelector: {}
+    ruleSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    scrapeConfigNamespaceSelector: {}
+    scrapeConfigSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    scrapeInterval: 30s
+    securityContext:
+      fsGroup: 2000
+      runAsGroup: 2000
+      runAsNonRoot: true
+      runAsUser: 1000
+      seccompProfile:
+        type: RuntimeDefault
+    serviceAccountName: kube-prometheus-stack-prometheus
+    serviceMonitorNamespaceSelector: {}
+    serviceMonitorSelector:
+      matchLabels:
+        release: kube-prometheus-stack
+    shards: 1
+    tsdb:
+      outOfOrderTimeWindow: 0s
+    version: v2.53.1
+    walCompression: true
+  status:
+    availableReplicas: 1
+    conditions:
+    - lastTransitionTime: "2024-07-27T09:02:54Z"
+      message: ""
+      observedGeneration: 1
+      reason: ""
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2024-07-27T09:02:54Z"
+      message: ""
+      observedGeneration: 1
+      reason: ""
+      status: "True"
+      type: Reconciled
+    paused: false
+    replicas: 1
+    selector: app.kubernetes.io/instance=kube-prometheus-stack-prometheus,app.kubernetes.io/managed-by=prometheus-operator,app.kubernetes.io/name=prometheus,operator.prometheus.io/name=kube-prometheus-stack-prometheus,prometheus=kube-prometheus-stack-prometheus
+    shardStatuses:
+    - availableReplicas: 1
+      replicas: 1
+      shardID: "0"
+      unavailableReplicas: 0
+      updatedReplicas: 1
+    shards: 1
+    unavailableReplicas: 0
+    updatedReplicas: 1
+kind: List
+metadata:
+  resourceVersion: ""
+  selfLink: ""
