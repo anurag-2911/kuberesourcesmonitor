@@ -14,7 +14,7 @@ From the path kuberesourcesmonitor/charts run the commands
     kubectl get all -n 
 
 5. helm uninstall:
-    helm uninstall kuberm
+    helm uninstall kuberm -n kuberesourcesmonitor
 
 6. To install the resources in custom namespace,for example: kuberesourcesmonitor-system:
     kubectl create namespace kuberesourcesmonitor-system
