@@ -1,3 +1,6 @@
+global:
+  prometheusReleaseLabel: kube-prometheus-stack
+
 replicaCount: 1
 
 image:

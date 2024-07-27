@@ -6,6 +6,9 @@ From the path kuberesourcesmonitor/charts run the commands
     helm install kuberm --dry-run --debug kuberesourcesmonitor
 3. Install the Helm Chart:
     helm install kuberm kuberesourcesmonitor
+    
+    kubectl create namespace kuberesourcesmonitor
+    helm upgrade --install krm kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack
 
 4. Verify the Installation:
     kubectl get all -n 
@@ -60,6 +63,44 @@ Install helm from public repo
     verify:
     http://localhost:8080/metrics
 
-7. 
+7. helm upgrade --install <release-name> <chart-path> --namespace <namespace>
+   in the path charts 
+   helm upgrade --install <release-name> <chart-path> --namespace <namespace>
+
+    kubectl get prometheus -n monitoring -o yaml
+    apiVersion: v1
+    items:
+    - apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    metadata:
+        annotations:
+        meta.helm.sh/release-name: kube-prometheus-stack ## this name ServiceMonitor label
+
+8. To dynamically set the `prometheusReleaseLabel` in your Helm chart based on the existing Prometheus release name
+
+    Steps to Set the Prometheus Release Name Dynamically
+
+    Retrieve the Prometheus Release Name: Use `kubectl` to get the release name from the Prometheus resource.
+    kubectl get prometheus -n monitoring -o yaml
+
+    Pass the Release Name to Helm: Use the `--set` flag with Helm to pass this release name as a value.
+
+    Example Helm Command
+
+    Suppose the retrieved Prometheus release name is `kube-prometheus-stack`. You can set this value when installing or upgrading your Helm chart like this:
+
+    kubectl create namespace kuberesourcesmonitor
+    helm upgrade --install krm kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack
+
+
+
+    Automating the Process (Optional)
+
+    PROMETHEUS_RELEASE=$(kubectl get prometheus -n monitoring -o jsonpath='{.items[0].metadata.annotations.meta\.helm\.sh/release-name}')
+    helm upgrade --install <release-name> <chart-path> \
+  --namespace <namespace> \
+  --set global.prometheusReleaseLabel=$PROMETHEUS_RELEASE
+
+
 
 

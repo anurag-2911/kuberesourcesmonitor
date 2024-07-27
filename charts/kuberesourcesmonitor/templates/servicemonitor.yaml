@@ -5,7 +5,9 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     app: {{ include "kuberesourcesmonitor.name" . }}
-    release: {{ .Release.Name }}
+    {{- if .Values.global.prometheusReleaseLabel }}
+    release: {{ .Values.global.prometheusReleaseLabel }}  # This will be set from the helm command
+    {{- end }}
 spec:
   selector:
     matchLabels:
@@ -13,6 +15,7 @@ spec:
   endpoints:
     - port: metrics
       interval: 30s
+      path: /metrics
   namespaceSelector:
     matchNames:
       - {{ .Release.Namespace }}
