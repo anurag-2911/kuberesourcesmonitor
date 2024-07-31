@@ -4,7 +4,7 @@ metadata:
   name: busybox-deployment
   namespace: default
 spec:
-  replicas: 100
+  replicas: 10
   selector:
     matchLabels:
       app: busybox
