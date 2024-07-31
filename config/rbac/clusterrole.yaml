@@ -18,6 +18,8 @@ rules:
   - get
   - list
   - watch
+  - create  # Add create permission for events
+  - update  # Add update permission for events
 - apiGroups:
   - apps
   resources:
@@ -29,6 +31,7 @@ rules:
   - get
   - list
   - watch
+  - update  # Add update permission for deployments
 - apiGroups:
   - batch
   resources:
@@ -52,18 +55,3 @@ rules:
   - delete
   - update
   - patch
-
----
-
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: manager-rolebinding
-subjects:
-- kind: ServiceAccount
-  name: controller-manager
-  namespace: kuberesourcesmonitor-system
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: manager-role

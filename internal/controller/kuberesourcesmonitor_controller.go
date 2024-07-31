@@ -188,7 +188,7 @@ func timeBasedAutoScale(ctx context.Context, instance *monitorv1alpha1.KubeResou
 		for _, scaleTime := range deployment.ScaleTimes {
 			if currentTime >= scaleTime.StartTime && currentTime <= scaleTime.EndTime {
 				log.Info("Scaling deployment", "deployment", deployment.Name, "replicas", scaleTime.Replicas)
-				r.scaleDeployment(ctx, deployment.Name, scaleTime.Replicas, req.Namespace, log)
+				r.scaleDeployment(ctx, deployment.Name, scaleTime.Replicas, deployment.Namespace, log)
 			}
 		}
 	}
@@ -381,4 +381,5 @@ func (r *KubeResourcesMonitorReconciler) scaleDeployment(ctx context.Context, de
 		}
 	}
 }
+
 
