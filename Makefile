@@ -2,6 +2,7 @@
 # VERSION defines the project version for the bundle.
 VERSION ?= 0.0.1
 # make docker-build-push-deploy
+# make cleanup
 # CHANNELS define the bundle channels used in the bundle.
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
