@@ -37,10 +37,52 @@ spec:
             properties:
               configMapName:
                 type: string
+              deployments:
+                items:
+                  description: DeploymentScalingSpec defines the scaling schedule
+                    for a specific deployment
+                  properties:
+                    maxReplicas:
+                      format: int32
+                      type: integer
+                    minReplicas:
+                      format: int32
+                      type: integer
+                    name:
+                      type: string
+                    namespace:
+                      type: string
+                    scaleTimes:
+                      items:
+                        description: ScaleTime defines a time window for scaling
+                        properties:
+                          endTime:
+                            type: string
+                          replicas:
+                            format: int32
+                            type: integer
+                          startTime:
+                            type: string
+                        required:
+                        - endTime
+                        - replicas
+                        - startTime
+                        type: object
+                      type: array
+                  required:
+                  - maxReplicas
+                  - minReplicas
+                  - name
+                  - namespace
+                  - scaleTimes
+                  type: object
+                type: array
               interval:
                 type: string
               prometheusEndpoint:
                 type: string
+            required:
+            - deployments
             type: object
           status:
             description: KubeResourcesMonitorStatus defines the observed state of

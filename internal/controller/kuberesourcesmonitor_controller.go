@@ -14,6 +14,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
@@ -108,7 +109,7 @@ func init() {
 		cpuUsageGauge, memoryUsageGauge)
 }
 
-// Reconcile reads that state of the cluster for a KubeResourcesMonitor object and makes changes based on the state read
+// Reconcile reads the state of the cluster for a KubeResourcesMonitor object and makes changes based on the state read
 // and what is in the KubeResourcesMonitor.Spec
 func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.Log.WithValues("kuberesourcesmonitor", req.NamespacedName)
@@ -130,12 +131,77 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 		return reconcile.Result{}, err
 	}
 
-	// Get the ConfigMap specified in the KubeResourcesMonitor spec
+	// Collect Kubernetes resources metrics
+	shouldReturn, result, err := r.collectKubResourcesMetrics(ctx, req, instance, log)
+	if shouldReturn {
+		return result, err
+	}
+
+	// Check if deployments are provided
+	if len(instance.Spec.Deployments) == 0 {
+		log.Info("No deployments specified for scaling, skipping autoscaling logic")
+	} else {
+		// Autoscaling logic based on time
+		timeBasedAutoScale(ctx, instance, r, req, log)
+	}
+
+	log.Info("Successfully reconciled KubeResourcesMonitor")
+
+	// Set the requeue interval based on the interval specified in the CR spec
+	timeInterval := instance.Spec.Interval
+	interval := 5 * time.Minute // default interval
+
+	if timeInterval != "" {
+		parsedInterval, err := time.ParseDuration(timeInterval)
+		if err != nil {
+			log.Error(err, "Failed to parse interval, using default", "interval", timeInterval)
+		} else {
+			interval = parsedInterval
+		}
+	}
+
+	return reconcile.Result{RequeueAfter: interval}, nil
+}
+
+// SetupWithManager sets up the controller with the Manager.
+func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	r.Log.Info("SetupWithManager called")
+
+	// Start a metrics server for Prometheus
+	http.Handle("/metrics", promhttp.Handler())
+	go func() {
+		r.Log.Info("Starting metrics server on port 2112")
+		if err := http.ListenAndServe(":2112", nil); err != nil {
+			r.Log.Error(err, "Error starting HTTP server")
+		}
+	}()
+
+	return ctrl.NewControllerManagedBy(mgr).
+		For(&monitorv1alpha1.KubeResourcesMonitor{}).
+		Complete(r)
+}
+
+// timeBasedAutoScale scales deployments based on specified time windows
+func timeBasedAutoScale(ctx context.Context, instance *monitorv1alpha1.KubeResourcesMonitor, r *KubeResourcesMonitorReconciler, req reconcile.Request, log logr.Logger) {
+	currentTime := time.Now().Format("15:04")
+	for _, deployment := range instance.Spec.Deployments {
+		for _, scaleTime := range deployment.ScaleTimes {
+			if currentTime >= scaleTime.StartTime && currentTime <= scaleTime.EndTime {
+				log.Info("Scaling deployment", "deployment", deployment.Name, "replicas", scaleTime.Replicas)
+				r.scaleDeployment(ctx, deployment.Name, scaleTime.Replicas, req.Namespace, log)
+			}
+		}
+	}
+}
+
+// collectKubResourcesMetrics collects various Kubernetes resource metrics and updates Prometheus gauges
+func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.Context, req reconcile.Request, instance *monitorv1alpha1.KubeResourcesMonitor, log logr.Logger) (bool, reconcile.Result, error) {
+	// Fetch the ConfigMap
 	configMap := &corev1.ConfigMap{}
-	err = r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: instance.Spec.ConfigMapName}, configMap)
+	err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: instance.Spec.ConfigMapName}, configMap)
 	if err != nil {
 		log.Error(err, "Failed to get ConfigMap", "name", instance.Spec.ConfigMapName)
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	metricsToCollect := strings.Split(configMap.Data["metrics"], "\n")
 	log.Info("Metrics to collect from ConfigMap", "metrics", metricsToCollect)
@@ -145,7 +211,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, podList)
 	if err != nil {
 		log.Error(err, "Failed to list Pods")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	podCount := len(podList.Items)
 	log.Info("Collected pod metrics", "count", podCount)
@@ -154,7 +220,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, serviceList)
 	if err != nil {
 		log.Error(err, "Failed to list Services")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	serviceCount := len(serviceList.Items)
 	log.Info("Collected service metrics", "count", serviceCount)
@@ -163,7 +229,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, configMapList)
 	if err != nil {
 		log.Error(err, "Failed to list ConfigMaps")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	configMapCount := len(configMapList.Items)
 	log.Info("Collected config map metrics", "count", configMapCount)
@@ -172,7 +238,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, secretList)
 	if err != nil {
 		log.Error(err, "Failed to list Secrets")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	secretCount := len(secretList.Items)
 	log.Info("Collected secret metrics", "count", secretCount)
@@ -181,7 +247,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, cronJobList)
 	if err != nil {
 		log.Error(err, "Failed to list CronJobs")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	cronJobCount := len(cronJobList.Items)
 	log.Info("Collected cronjob metrics", "count", cronJobCount)
@@ -190,7 +256,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, deploymentList)
 	if err != nil {
 		log.Error(err, "Failed to list Deployments")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	deploymentCount := len(deploymentList.Items)
 	log.Info("Collected deployment metrics", "count", deploymentCount)
@@ -199,7 +265,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, nodeList)
 	if err != nil {
 		log.Error(err, "Failed to list Nodes")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	nodeCount := len(nodeList.Items)
 	log.Info("Collected node metrics", "count", nodeCount)
@@ -208,7 +274,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, pvcList)
 	if err != nil {
 		log.Error(err, "Failed to list PVCs")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	pvcCount := len(pvcList.Items)
 	log.Info("Collected PVC metrics", "count", pvcCount)
@@ -217,7 +283,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	err = r.Client.List(ctx, eventList)
 	if err != nil {
 		log.Error(err, "Failed to list Events")
-		return reconcile.Result{}, err
+		return true, reconcile.Result{}, err
 	}
 	eventCount := len(eventList.Items)
 	log.Info("Collected event metrics", "count", eventCount)
@@ -291,38 +357,28 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	cpuUsageGauge.Set(totalCPUUsage)
 	memoryUsageGauge.Set(totalMemoryUsage)
 
-	log.Info("Successfully reconciled KubeResourcesMonitor")
+	return false, reconcile.Result{}, nil
+}
 
-	// Set the requeue interval based on the interval specified in the CR spec
-	timeInterval := instance.Spec.Interval
-	interval := 5 * time.Minute // default interval
-
-	if timeInterval != "" {
-		parsedInterval, err := time.ParseDuration(timeInterval)
-		if err != nil {
-			log.Error(err, "Failed to parse interval, using default", "interval", timeInterval)
-		} else {
-			interval = parsedInterval
-		}
+// scaleDeployment scales the specified deployment to the given number of replicas
+// scaleDeployment scales the specified deployment to the given number of replicas
+func (r *KubeResourcesMonitorReconciler) scaleDeployment(ctx context.Context, deploymentName string, replicas int32, namespace string, log logr.Logger) {
+	deployment := &appsv1.Deployment{}
+	err := r.Client.Get(ctx, types.NamespacedName{Name: deploymentName, Namespace: namespace}, deployment)
+	if err != nil {
+		log.Error(err, "Failed to get Deployment for scaling", "name", deploymentName, "namespace", namespace)
+		return
 	}
 
-	return reconcile.Result{RequeueAfter: interval}, nil
-}
-
-// SetupWithManager sets up the controller with the Manager.
-func (r *KubeResourcesMonitorReconciler) SetupWithManager(mgr ctrl.Manager) error {
-	r.Log.Info("SetupWithManager called")
-
-	// Start a metrics server for Prometheus
-	http.Handle("/metrics", promhttp.Handler())
-	go func() {
-		r.Log.Info("Starting metrics server on port 2112")
-		if err := http.ListenAndServe(":2112", nil); err != nil {
-			r.Log.Error(err, "Error starting HTTP server")
+	currentReplicas := *deployment.Spec.Replicas
+	if currentReplicas != replicas {
+		deployment.Spec.Replicas = &replicas
+		err = r.Client.Update(ctx, deployment)
+		if err != nil {
+			log.Error(err, "Failed to update Deployment replicas", "name", deploymentName, "namespace", namespace)
+		} else {
+			log.Info("Scaled deployment", "name", deploymentName, "namespace", namespace, "new replicas", replicas)
 		}
-	}()
-
-	return ctrl.NewControllerManagedBy(mgr).
-		For(&monitorv1alpha1.KubeResourcesMonitor{}).
-		Complete(r)
+	}
 }
+

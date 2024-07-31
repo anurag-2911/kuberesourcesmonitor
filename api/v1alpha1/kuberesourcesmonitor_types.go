@@ -4,11 +4,28 @@ import (
     metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// DeploymentScalingSpec defines the scaling schedule for a specific deployment
+type DeploymentScalingSpec struct {
+    Name        string `json:"name"`        // Name of the deployment to scale
+    Namespace   string `json:"namespace"`   // Namespace of the deployment
+    MinReplicas int32  `json:"minReplicas"` // Minimum number of replicas
+    MaxReplicas int32  `json:"maxReplicas"` // Maximum number of replicas
+    ScaleTimes  []ScaleTime `json:"scaleTimes"` // List of times to scale the deployment
+}
+
+// ScaleTime defines a time window for scaling
+type ScaleTime struct {
+    StartTime string `json:"startTime"` // Start time in HH:MM format (24-hour)
+    EndTime   string `json:"endTime"`   // End time in HH:MM format (24-hour)
+    Replicas  int32  `json:"replicas"`  // Number of replicas during this time window
+}
+
 // KubeResourcesMonitorSpec defines the desired state of KubeResourcesMonitor
 type KubeResourcesMonitorSpec struct {
-    Interval            string `json:"interval,omitempty"`
-    PrometheusEndpoint  string `json:"prometheusEndpoint,omitempty"`
-    ConfigMapName       string `json:"configMapName,omitempty"` // Add this line
+    Interval           string `json:"interval,omitempty"`
+    PrometheusEndpoint string `json:"prometheusEndpoint,omitempty"`
+    ConfigMapName      string `json:"configMapName,omitempty"`
+    Deployments        []DeploymentScalingSpec `json:"deployments"` // List of deployments to scale
 }
 
 // KubeResourcesMonitorStatus defines the observed state of KubeResourcesMonitor
