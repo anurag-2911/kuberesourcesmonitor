@@ -24,6 +24,8 @@ rules:
   - get
   - list
   - watch
+  - create  # Add create permission for events
+  - update  # Add update permission for events
 - apiGroups:
   - apps
   resources:
@@ -35,6 +37,7 @@ rules:
   - get
   - list
   - watch
+  - update  # Add update permission for deployments
 - apiGroups:
   - batch
   resources:
