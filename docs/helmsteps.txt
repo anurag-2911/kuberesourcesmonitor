@@ -6,7 +6,7 @@ From the path kuberesourcesmonitor/charts run the commands
     kubectl apply -f charts/kuberesourcesmonitor/templates/crd-install.yaml
     helm install kuberm --dry-run --debug kuberesourcesmonitor
 3. Install the Helm Chart:
-    helm install kuberm kuberesourcesmonitor
+    helm install kuberm kuberesourcesmonitor (obsolete)
     
     kubectl create namespace kuberesourcesmonitor
     helm upgrade --install krm kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack
@@ -50,20 +50,20 @@ Install helm from public repo
     helm uninstall kuberm
 5.Install the Helm Chart in a Specific Namespace
     kubectl create namespace kuberesourcesmonitor
-    helm install kubemntr kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack 
+    helm install krm kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack 
     verify: 
     kubectl get all -n kuberesourcesmonitor
     uninstall:
-    helm uninstall kuberm --namespace kuberesourcesmonitor-system
-    kubectl delete namespace kuberesourcesmonitor-system
+    helm uninstall krm --namespace kuberesourcesmonitor
+    kubectl delete namespace kuberesourcesmonitor
 
     List the helm chart:
-    helm list --namespace kuberesourcesmonitor-system
+    helm list --namespace kuberesourcesmonitor
 
 6. Port forward the requests and verify that the controller is updating the metrics to the end point
-    kubectl get pods -n kuberesourcesmonitor-system
+    kubectl get pods -n kuberesourcesmonitor
     for example:
-    kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor-system
+    kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor
 
     verify:
     http://localhost:8080/metrics
