@@ -2,8 +2,20 @@ apiVersion: monitor.example.com/v1alpha1
 kind: KubeResourcesMonitor
 metadata:
   name: example-kuberesourcesmonitor
-  namespace: {{ .Release.Namespace }}
+  namespace: kuberesourcesmonitor
 spec:
   interval: "5m"
   prometheusEndpoint: "2112"
   configMapName: "kuberesourcesmonitor-config"
+  deployments:
+    - name: "busybox-deployment"
+      namespace: "default"  
+      minReplicas: 2
+      maxReplicas: 5
+      scaleTimes:
+        - startTime: "00:00"  
+          endTime: "06:00"    
+          replicas: 5         
+        - startTime: "06:00"
+          endTime: "23:59"
+          replicas: 2
