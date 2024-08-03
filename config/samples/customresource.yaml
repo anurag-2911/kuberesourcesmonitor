@@ -9,23 +9,23 @@ spec:
   configMapName: "kuberesourcesmonitor-config"  # Name of the ConfigMap containing metrics configuration
   deployments:
     - name: "busybox-deployment"
-      namespace: "default"  
+      namespace: "default"
       minReplicas: 2
       maxReplicas: 5
       scaleTimes:
-        - startTime: "00:00" 
-          endTime: "06:00"    
-          replicas: 5         
+        - startTime: "00:00"  # Time to start scaling
+          endTime: "06:00"    # Time to end scaling
+          replicas: 5         # Number of replicas during this time window
         - startTime: "06:00"
           endTime: "23:59"
           replicas: 2
-    # - name: "example-deployment-2"
-    #   minReplicas: 1
-    #   maxReplicas: 4
-    #   scaleTimes:
-    #     - startTime: "01:00"
-    #       endTime: "05:00"
-    #       replicas: 4
-    #     - startTime: "05:00"
-    #       endTime: "24:00"
-    #       replicas: 1
+  messageQueues:
+    - queueSecretName: "rabbitmq-credentials"
+      queueSecretKey: "queueUrl"
+      queueType: "RabbitMQ"
+      deploymentName: "rabbitmq-consumer"
+      deploymentNamespace: "default"
+      thresholdMessages: 10
+      scaleUpReplicas: 5
+      scaleDownReplicas: 1
+    # Add more message queues as needed

@@ -79,10 +79,46 @@ spec:
                 type: array
               interval:
                 type: string
+              messageQueues:
+                items:
+                  description: MessageQueueSpec defines the message queue monitoring
+                    configuration
+                  properties:
+                    deploymentName:
+                      type: string
+                    deploymentNamespace:
+                      type: string
+                    queueSecretKey:
+                      type: string
+                    queueSecretName:
+                      type: string
+                    queueType:
+                      type: string
+                    scaleDownReplicas:
+                      format: int32
+                      type: integer
+                    scaleUpReplicas:
+                      format: int32
+                      type: integer
+                    thresholdMessages:
+                      format: int32
+                      type: integer
+                  required:
+                  - deploymentName
+                  - deploymentNamespace
+                  - queueSecretKey
+                  - queueSecretName
+                  - queueType
+                  - scaleDownReplicas
+                  - scaleUpReplicas
+                  - thresholdMessages
+                  type: object
+                type: array
               prometheusEndpoint:
                 type: string
             required:
             - deployments
+            - messageQueues
             type: object
           status:
             description: KubeResourcesMonitorStatus defines the observed state of
