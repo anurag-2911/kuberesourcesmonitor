@@ -1,98 +1,88 @@
 package controller
 
 import (
-	"context"
-	"encoding/base64"
-	"errors"
+    "context"
+    "encoding/base64"
 
-	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
-	"github.com/go-logr/logr"
-	"github.com/streadway/amqp"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
+    monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
+    "github.com/go-logr/logr"
+    "github.com/streadway/amqp"
+    appsv1 "k8s.io/api/apps/v1"
+    corev1 "k8s.io/api/core/v1"
+    "k8s.io/apimachinery/pkg/types"
 )
 
 func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Context, mq monitorv1alpha1.MessageQueueSpec, log logr.Logger) error {
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{Name: mq.QueueSecretName, Namespace: "kuberesourcesmonitor-system"}, secret); err != nil {
-		log.Error(err, "Failed to get Secret")
-		return err
-	}
+    secret := &corev1.Secret{}
+    if err := r.Get(ctx, types.NamespacedName{Name: mq.QueueSecretName, Namespace: "kuberesourcesmonitor-system"}, secret); err != nil {
+        log.Error(err, "Failed to get Secret")
+        return err
+    }
 
-	log.Info("Successfully fetched secret", "secret", secret.Name)
+    queueUrlBase64 := secret.Data[mq.QueueSecretKey]
+    log.Info("Base64 encoded queue URL", "data", string(queueUrlBase64))
+    queueUrl, err := base64.StdEncoding.DecodeString(string(queueUrlBase64))
+    if err != nil {
+        log.Error(err, "Failed to decode Secret")
+        return err
+    }
+    log.Info("Decoded queue URL", "url", string(queueUrl))
 
-	queueUrlBase64, exists := secret.Data[mq.QueueSecretKey]
-	if !exists {
-		log.Error(nil, "Secret key not found", "key", mq.QueueSecretKey)
-		return errors.New("secret key not found")
-	}
+    conn, err := amqp.Dial(string(queueUrl))
+    if err != nil {
+        log.Error(err, "Failed to connect to RabbitMQ")
+        return err
+    }
+    defer conn.Close()
 
-	log.Info("Base64 encoded queue URL", "data", string(queueUrlBase64))
+    ch, err := conn.Channel()
+    if err != nil {
+        log.Error(err, "Failed to open a channel")
+        return err
+    }
+    defer ch.Close()
 
-	queueUrl, err := base64.StdEncoding.DecodeString(string(queueUrlBase64))
-	if err != nil {
-		log.Error(err, "Failed to decode Secret")
-		return err
-	}
+    q, err := ch.QueueDeclare(
+        "message.test.queue",
+        true,
+        false,
+        false,
+        false,
+        nil,
+    )
+    if err != nil {
+        log.Error(err, "Failed to declare a queue")
+        return err
+    }
 
-	log.Info("Decoded queue URL", "url", string(queueUrl))
+    queue, err := ch.QueueInspect(q.Name)
+    if err != nil {
+        log.Error(err, "Failed to inspect the queue")
+        return err
+    }
 
-	conn, err := amqp.Dial(string(queueUrl))
-	if err != nil {
-		log.Error(err, "Failed to connect to RabbitMQ")
-		return err
-	}
-	defer conn.Close()
+    log.Info("Queue length", "messages", queue.Messages)
 
-	ch, err := conn.Channel()
-	if err != nil {
-		log.Error(err, "Failed to open a channel")
-		return err
-	}
-	defer ch.Close()
+    deployment := &appsv1.Deployment{}
+    if err := r.Get(ctx, types.NamespacedName{Name: mq.DeploymentName, Namespace: mq.DeploymentNamespace}, deployment); err != nil {
+        log.Error(err, "Failed to get Deployment")
+        return err
+    }
 
-	q, err := ch.QueueDeclare(
-		"message.test.queue",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Error(err, "Failed to declare a queue")
-		return err
-	}
+    currentReplicas := *deployment.Spec.Replicas
 
-	queue, err := ch.QueueInspect(q.Name)
-	if err != nil {
-		log.Error(err, "Failed to inspect the queue")
-		return err
-	}
+    if queue.Messages > int(mq.ThresholdMessages) && currentReplicas != mq.ScaleUpReplicas {
+        log.Info("Scaling up deployment", "deployment", mq.DeploymentName, "replicas", mq.ScaleUpReplicas)
+        deployment.Spec.Replicas = &mq.ScaleUpReplicas
+    } else if queue.Messages <= int(mq.ThresholdMessages) && currentReplicas != mq.ScaleDownReplicas {
+        log.Info("Scaling down deployment", "deployment", mq.DeploymentName, "replicas", mq.ScaleDownReplicas)
+        deployment.Spec.Replicas = &mq.ScaleDownReplicas
+    }
 
-	log.Info("Queue length", "messages", queue.Messages)
+    if err := r.Update(ctx, deployment); err != nil {
+        log.Error(err, "Failed to update Deployment replicas")
+        return err
+    }
 
-	deployment := &appsv1.Deployment{}
-	if err := r.Get(ctx, types.NamespacedName{Name: mq.DeploymentName, Namespace: mq.DeploymentNamespace}, deployment); err != nil {
-		log.Error(err, "Failed to get Deployment")
-		return err
-	}
-
-	currentReplicas := *deployment.Spec.Replicas
-
-	if queue.Messages > int(mq.ThresholdMessages) && currentReplicas != mq.ScaleUpReplicas {
-		log.Info("Scaling up deployment", "deployment", mq.DeploymentName, "replicas", mq.ScaleUpReplicas)
-		deployment.Spec.Replicas = &mq.ScaleUpReplicas
-	} else if queue.Messages <= int(mq.ThresholdMessages) && currentReplicas != mq.ScaleDownReplicas {
-		log.Info("Scaling down deployment", "deployment", mq.DeploymentName, "replicas", mq.ScaleDownReplicas)
-		deployment.Spec.Replicas = &mq.ScaleDownReplicas
-	}
-
-	if err := r.Update(ctx, deployment); err != nil {
-		log.Error(err, "Failed to update Deployment replicas")
-		return err
-	}
-
-	return nil
+    return nil
 }
