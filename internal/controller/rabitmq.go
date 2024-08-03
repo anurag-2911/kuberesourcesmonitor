@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 
 	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
 	"github.com/go-logr/logr"
@@ -19,12 +20,23 @@ func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Con
 		return err
 	}
 
-	queueUrlBase64 := secret.Data[mq.QueueSecretKey]
+	log.Info("Successfully fetched secret", "secret", secret.Name)
+
+	queueUrlBase64, exists := secret.Data[mq.QueueSecretKey]
+	if !exists {
+		log.Error(nil, "Secret key not found", "key", mq.QueueSecretKey)
+		return errors.New("secret key not found")
+	}
+
+	log.Info("Base64 encoded queue URL", "data", string(queueUrlBase64))
+
 	queueUrl, err := base64.StdEncoding.DecodeString(string(queueUrlBase64))
 	if err != nil {
 		log.Error(err, "Failed to decode Secret")
 		return err
 	}
+
+	log.Info("Decoded queue URL", "url", string(queueUrl))
 
 	conn, err := amqp.Dial(string(queueUrl))
 	if err != nil {
