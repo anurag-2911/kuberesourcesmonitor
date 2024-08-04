@@ -2,3 +2,5 @@ kubectl patch configmap kuberesourcesmonitor-config -n kuberesourcesmonitor-syst
 
 
 kubectl patch configmap kuberesourcesmonitor-config -n <namespace> --type merge -p '{"data":{"collectMetrics":"true","rabbitMQAutoScale":"true","timeBasedAutoScale":"true"}}'
+
+kubectl patch configmap kuberesourcesmonitor-config -n kuberesourcesmonitor --type merge -p '{"data":{"collectMetrics":"true","rabbitMQAutoScale":"true","timeBasedAutoScale":"true"}}'

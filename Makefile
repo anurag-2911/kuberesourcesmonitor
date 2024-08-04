@@ -297,6 +297,7 @@ cleanup: ## Cleanup all resources related to the operator.
 	@echo "deleted namespace "
 
 	# Delete the cluster role and cluster role binding
+	$(KUBECTL) delete clusterrole kuberesourcesmonitor-krm-manager-role || true
 	$(KUBECTL) delete clusterrole manager-role || true
 	$(KUBECTL) delete clusterrolebinding manager-rolebinding || true
 	@echo "deleted clusterrole ."
