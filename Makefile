@@ -282,19 +282,26 @@ docker-build-push-deploy: docker-build docker-push deploy ## Build, push and dep
 cleanup: ## Cleanup all resources related to the operator.
 	# Delete all custom resources
 	$(KUBECTL) delete --ignore-not-found $(shell $(KUBECTL) get kuberesourcesmonitors.monitor.example.com -o name -n kuberesourcesmonitor-system) -n kuberesourcesmonitor-system
+	@echo "deleted custom resource "
 
 	# Delete the CRD
 	$(KUBECTL) delete crd kuberesourcesmonitors.monitor.example.com
+	@echo "deleted CRD "
 
 	# Delete all resources in the namespace
 	$(KUBECTL) delete all --all -n kuberesourcesmonitor-system
+	@echo "deleted all resources "
 
 	# Delete the namespace (if you want to remove the namespace as well)
 	$(KUBECTL) delete namespace kuberesourcesmonitor-system
+	@echo "deleted namespace "
 
 	# Delete the cluster role and cluster role binding
 	$(KUBECTL) delete clusterrole manager-role
 	$(KUBECTL) delete clusterrolebinding manager-rolebinding
+	@echo "deleted clusterrole ."
+	@echo "deleted clusterrolebinding ."
+	@echo " "
 	@echo " "
 	@echo "Cleanup successfully completed."
 
