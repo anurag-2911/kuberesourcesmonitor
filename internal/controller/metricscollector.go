@@ -338,3 +338,9 @@ func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.
 
 	return nil
 }
+
+func collectMetrics(ctx context.Context, r *KubeResourcesMonitorReconciler, req reconcile.Request, instance *monitorv1alpha1.KubeResourcesMonitor, log logr.Logger) {
+	if err := r.collectKubResourcesMetrics(ctx, req, instance, log); err != nil {
+		log.Info("error in getting metrics ", "err", err)
+	}
+}

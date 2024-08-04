@@ -281,27 +281,26 @@ docker-build-push-deploy: docker-build docker-push deploy ## Build, push and dep
 .PHONY: cleanup
 cleanup: ## Cleanup all resources related to the operator.
 	# Delete all custom resources
-	$(KUBECTL) delete --ignore-not-found $(shell $(KUBECTL) get kuberesourcesmonitors.monitor.example.com -o name -n kuberesourcesmonitor-system) -n kuberesourcesmonitor-system
+	$(KUBECTL) get kuberesourcesmonitors.monitor.example.com -n kuberesourcesmonitor-system -o name | xargs -r $(KUBECTL) delete --ignore-not-found || true
 	@echo "deleted custom resource "
 
 	# Delete the CRD
-	$(KUBECTL) delete crd kuberesourcesmonitors.monitor.example.com
+	$(KUBECTL) delete crd kuberesourcesmonitors.monitor.example.com || true
 	@echo "deleted CRD "
 
 	# Delete all resources in the namespace
-	$(KUBECTL) delete all --all -n kuberesourcesmonitor-system
+	$(KUBECTL) delete all --all -n kuberesourcesmonitor-system || true
 	@echo "deleted all resources "
 
 	# Delete the namespace (if you want to remove the namespace as well)
-	$(KUBECTL) delete namespace kuberesourcesmonitor-system
+	$(KUBECTL) delete namespace kuberesourcesmonitor-system || true
 	@echo "deleted namespace "
 
 	# Delete the cluster role and cluster role binding
-	$(KUBECTL) delete clusterrole manager-role
-	$(KUBECTL) delete clusterrolebinding manager-rolebinding
+	$(KUBECTL) delete clusterrole manager-role || true
+	$(KUBECTL) delete clusterrolebinding manager-rolebinding || true
 	@echo "deleted clusterrole ."
 	@echo "deleted clusterrolebinding ."
 	@echo " "
 	@echo " "
 	@echo "Cleanup successfully completed."
-
