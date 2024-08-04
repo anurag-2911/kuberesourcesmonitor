@@ -4,7 +4,7 @@ metadata:
   name: example-kuberesourcesmonitor
   namespace: kuberesourcesmonitor-system
 spec:
-  interval: "45s"  # Interval to requeue the reconciller
+  interval: "45s"  # Interval to requeue the reconciler
   prometheusEndpoint: "2112"  # Endpoint for Prometheus metrics
   configMapName: "kuberesourcesmonitor-config"  # Name of the ConfigMap containing metrics configuration
   deployments:
@@ -22,7 +22,7 @@ spec:
   messageQueues:
     - queueSecretName: "rabbitmq-credentials"
       queueSecretKey: "queueUrl"
-      queueType: "message.test.queue"
+      queueName: "message.test.queue"
       deploymentName: "rabbitmq-consumer"
       deploymentNamespace: "default"
       thresholdMessages: 10

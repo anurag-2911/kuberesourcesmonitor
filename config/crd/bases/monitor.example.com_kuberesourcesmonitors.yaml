@@ -88,11 +88,11 @@ spec:
                       type: string
                     deploymentNamespace:
                       type: string
+                    queueName:
+                      type: string
                     queueSecretKey:
                       type: string
                     queueSecretName:
-                      type: string
-                    queueType:
                       type: string
                     scaleDownReplicas:
                       format: int32
@@ -106,9 +106,9 @@ spec:
                   required:
                   - deploymentName
                   - deploymentNamespace
+                  - queueName
                   - queueSecretKey
                   - queueSecretName
-                  - queueType
                   - scaleDownReplicas
                   - scaleUpReplicas
                   - thresholdMessages
