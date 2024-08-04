@@ -7,8 +7,6 @@ metadata:
   annotations:
     meta.helm.sh/release-name: "kubemntr"
     meta.helm.sh/release-namespace: "kuberesourcesmonitor"    
-    # "helm.sh/hook": pre-install
-    # "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   group: monitor.example.com
   names:
@@ -58,5 +56,42 @@ spec:
                               type: string
                             replicas:
                               type: integer
+                    required:
+                      - name
+                      - namespace
+                      - minReplicas
+                      - maxReplicas
+                      - scaleTimes
+                messageQueues:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      queueSecretName:
+                        type: string
+                      queueSecretKey:
+                        type: string
+                      queueName:
+                        type: string
+                      deploymentName:
+                        type: string
+                      deploymentNamespace:
+                        type: string
+                      thresholdMessages:
+                        type: integer
+                      scaleUpReplicas:
+                        type: integer
+                      scaleDownReplicas:
+                        type: integer
+                    required:
+                      - queueSecretName
+                      - queueSecretKey
+                      - queueName
+                      - deploymentName
+                      - deploymentNamespace
+                      - thresholdMessages
+                      - scaleUpReplicas
+                      - scaleDownReplicas
               required:
                 - deployments
+                - messageQueues

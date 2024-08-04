@@ -4,7 +4,7 @@ metadata:
   name: example-kuberesourcesmonitor
   namespace: kuberesourcesmonitor
 spec:
-  interval: "5m"
+  interval: "30s"
   prometheusEndpoint: "2112"
   configMapName: "kuberesourcesmonitor-config"
   deployments:
@@ -19,3 +19,13 @@ spec:
         - startTime: "06:00"
           endTime: "23:59"
           replicas: 2
+  messageQueues:
+    - queueSecretName: "rabbitmq-credentials"
+      queueSecretKey: "queueUrl"
+      queueName: "message.test.queue"
+      deploymentName: "rabbitmq-consumer"
+      deploymentNamespace: "default"
+      thresholdMessages: 10
+      scaleUpReplicas: 5
+      scaleDownReplicas: 1
+    # Add more message queues as needed
