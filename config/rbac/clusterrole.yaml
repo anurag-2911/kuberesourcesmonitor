@@ -11,15 +11,18 @@ rules:
   - configmaps
   - secrets
   - nodes
+  - persistentvolumes
   - persistentvolumeclaims
   - events
   - replicationcontrollers
+  - endpoints
+  - namespaces
   verbs:
   - get
   - list
   - watch
-  - create  # Add create permission for events
-  - update  # Add update permission for events
+  - create  
+  - update  
 - apiGroups:
   - apps
   resources:
@@ -31,12 +34,20 @@ rules:
   - get
   - list
   - watch
-  - update  # Add update permission for deployments
+  - update  
 - apiGroups:
   - batch
   resources:
   - cronjobs
   - jobs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
   verbs:
   - get
   - list

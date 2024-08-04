@@ -2,17 +2,16 @@ package controller
 
 import (
 	"context"
-	"strings"
+	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
 	"github.com/go-logr/logr"
+	"github.com/prometheus/client_golang/prometheus"
+	appsv1 "k8s.io/api/apps/v1"
+	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"github.com/prometheus/client_golang/prometheus"
-	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
-	batchv1 "k8s.io/api/batch/v1"
+	"strings"
 )
-
 
 var (
 	// Define Prometheus gauges for monitoring various Kubernetes resources
@@ -39,6 +38,30 @@ var (
 	deploymentGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "deployment_count",
 		Help: "Number of deployments",
+	})
+	statefulSetGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "statefulset_count",
+		Help: "Number of stateful sets",
+	})
+	daemonSetGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "daemonset_count",
+		Help: "Number of daemon sets",
+	})
+	replicaSetGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "replicaset_count",
+		Help: "Number of replica sets",
+	})	
+	endpointGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "endpoint_count",
+		Help: "Number of endpoints",
+	})
+	persistentVolumeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "persistentvolume_count",
+		Help: "Number of persistent volumes",
+	})
+	namespaceGauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "namespace_count",
+		Help: "Number of namespaces",
 	})
 	nodeGauge = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name: "node_count",
@@ -84,12 +107,13 @@ var (
 
 func init() {
 	// Register the gauges with Prometheus's default registry
-	prometheus.MustRegister(podGauge, serviceGauge, configMapGauge, secretGauge, cronJobGauge, deploymentGauge, nodeGauge,
+	prometheus.MustRegister(podGauge, serviceGauge, configMapGauge, secretGauge, cronJobGauge, deploymentGauge, statefulSetGauge,
+		daemonSetGauge, replicaSetGauge, endpointGauge, persistentVolumeGauge, namespaceGauge, nodeGauge,
 		nodeReadyGauge, nodeMemoryPressureGauge, nodeDiskPressureGauge, pvcGauge, eventGauge, restartGauge, crashGauge,
 		cpuUsageGauge, memoryUsageGauge)
 }
 
-func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.Context, req reconcile.Request, instance *monitorv1alpha1.KubeResourcesMonitor, log logr.Logger) (error) {
+func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.Context, req reconcile.Request, instance *monitorv1alpha1.KubeResourcesMonitor, log logr.Logger) error {
 	configMap := &corev1.ConfigMap{}
 	err := r.Client.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: instance.Spec.ConfigMapName}, configMap)
 	if err != nil {
@@ -154,6 +178,60 @@ func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.
 	}
 	deploymentCount := len(deploymentList.Items)
 	log.Info("Collected deployment metrics", "count", deploymentCount)
+
+	statefulSetList := &appsv1.StatefulSetList{}
+	err = r.Client.List(ctx, statefulSetList)
+	if err != nil {
+		log.Error(err, "Failed to list StatefulSets")
+		return err
+	}
+	statefulSetCount := len(statefulSetList.Items)
+	log.Info("Collected statefulset metrics", "count", statefulSetCount)
+
+	daemonSetList := &appsv1.DaemonSetList{}
+	err = r.Client.List(ctx, daemonSetList)
+	if err != nil {
+		log.Error(err, "Failed to list DaemonSets")
+		return err
+	}
+	daemonSetCount := len(daemonSetList.Items)
+	log.Info("Collected daemonset metrics", "count", daemonSetCount)
+
+	replicaSetList := &appsv1.ReplicaSetList{}
+	err = r.Client.List(ctx, replicaSetList)
+	if err != nil {
+		log.Error(err, "Failed to list ReplicaSets")
+		return err
+	}
+	replicaSetCount := len(replicaSetList.Items)
+	log.Info("Collected replicaset metrics", "count", replicaSetCount)
+
+	endpointList := &corev1.EndpointsList{}
+	err = r.Client.List(ctx, endpointList)
+	if err != nil {
+		log.Error(err, "Failed to list Endpoints")
+		return err
+	}
+	endpointCount := len(endpointList.Items)
+	log.Info("Collected endpoint metrics", "count", endpointCount)
+
+	persistentVolumeList := &corev1.PersistentVolumeList{}
+	err = r.Client.List(ctx, persistentVolumeList)
+	if err != nil {
+		log.Error(err, "Failed to list PersistentVolumes")
+		return err
+	}
+	persistentVolumeCount := len(persistentVolumeList.Items)
+	log.Info("Collected persistentvolume metrics", "count", persistentVolumeCount)
+
+	namespaceList := &corev1.NamespaceList{}
+	err = r.Client.List(ctx, namespaceList)
+	if err != nil {
+		log.Error(err, "Failed to list Namespaces")
+		return err
+	}
+	namespaceCount := len(namespaceList.Items)
+	log.Info("Collected namespace metrics", "count", namespaceCount)
 
 	nodeList := &corev1.NodeList{}
 	err = r.Client.List(ctx, nodeList)
@@ -230,7 +308,7 @@ func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.
 	totalMemoryUsage := totalMemoryUsageBytes / (1024.0 * 1024.0 * 1024.0)
 
 	// Log the collected metrics
-	log.Info("Resource counts", "Pods", podCount, "Services", serviceCount, "ConfigMaps", configMapCount, "Secrets", secretCount, "CronJobs", cronJobCount, "Deployments", deploymentCount, "Nodes", nodeCount, "PVCs", pvcCount, "Events", eventCount, "Restarts", restartCount, "Crashes", crashCount, "TotalCPUUsage (cores)", totalCPUUsage, "TotalMemoryUsage (GB)", totalMemoryUsage, "NodeReady", nodeReady, "NodeMemoryPressure", nodeMemoryPressure, "NodeDiskPressure", nodeDiskPressure)
+	log.Info("Resource counts", "Pods", podCount, "Services", serviceCount, "ConfigMaps", configMapCount, "Secrets", secretCount, "CronJobs", cronJobCount, "Deployments", deploymentCount, "StatefulSets", statefulSetCount, "DaemonSets", daemonSetCount, "ReplicaSets", replicaSetCount, "Endpoints", endpointCount, "PersistentVolumes", persistentVolumeCount, "Namespaces", namespaceCount, "Nodes", nodeCount, "PVCs", pvcCount, "Events", eventCount, "Restarts", restartCount, "Crashes", crashCount, "TotalCPUUsage (cores)", totalCPUUsage, "TotalMemoryUsage (GB)", totalMemoryUsage, "NodeReady", nodeReady, "NodeMemoryPressure", nodeMemoryPressure, "NodeDiskPressure", nodeDiskPressure)
 
 	// Update Prometheus gauge values with the collected metrics
 	log.Info("Setting Prometheus gauge values")
@@ -240,6 +318,12 @@ func (r *KubeResourcesMonitorReconciler) collectKubResourcesMetrics(ctx context.
 	secretGauge.Set(float64(secretCount))
 	cronJobGauge.Set(float64(cronJobCount))
 	deploymentGauge.Set(float64(deploymentCount))
+	statefulSetGauge.Set(float64(statefulSetCount))
+	daemonSetGauge.Set(float64(daemonSetCount))
+	replicaSetGauge.Set(float64(replicaSetCount))	
+	endpointGauge.Set(float64(endpointCount))
+	persistentVolumeGauge.Set(float64(persistentVolumeCount))
+	namespaceGauge.Set(float64(namespaceCount))
 	nodeGauge.Set(float64(nodeCount))
 	nodeReadyGauge.Set(nodeReady)
 	nodeMemoryPressureGauge.Set(nodeMemoryPressure)
