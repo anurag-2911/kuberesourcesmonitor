@@ -44,10 +44,7 @@ Adding helm chart to public repo:
 Install helm from public repo
 1.helm repo add kuberm https://anurag-2911.github.io/helm-charts
 2.helm repo update
-3.helm install kuberm kuberm/kuberesourcesmonitor
-4.uninstall :
-    helm uninstall kuberm
-5.Install the Helm Chart in a Specific Namespace
+3.Install the Helm Chart in a Specific Namespace
     kubectl create namespace kuberesourcesmonitor
     helm install krm kuberm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack 
     verify: 
@@ -59,7 +56,7 @@ Install helm from public repo
     List the helm chart:
     helm list --namespace kuberesourcesmonitor
 
-6. Port forward the requests and verify that the controller is updating the metrics to the end point
+4. Port forward the requests and verify that the controller is updating the metrics to the end point
     kubectl get pods -n kuberesourcesmonitor
     for example:
     kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor
@@ -67,7 +64,7 @@ Install helm from public repo
     verify:
     http://localhost:8080/metrics
 
-7. helm upgrade --install <release-name> <chart-path> --namespace <namespace>
+5. helm upgrade --install <release-name> <chart-path> --namespace <namespace>
    in the path charts 
    helm upgrade --install <release-name> <chart-path> --namespace <namespace>
 
@@ -80,7 +77,7 @@ Install helm from public repo
         annotations:
         meta.helm.sh/release-name: kube-prometheus-stack ## this name ServiceMonitor label
 
-8. To dynamically set the `prometheusReleaseLabel` in your Helm chart based on the existing Prometheus release name
+6. To dynamically set the `prometheusReleaseLabel` in your Helm chart based on the existing Prometheus release name
 
     Steps to Set the Prometheus Release Name Dynamically
 
