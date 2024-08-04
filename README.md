@@ -24,37 +24,60 @@ KubeResourcesMonitor is a Kubernetes Operator that provides three key features:
 
 KubeResourcesMonitor collects various counts of Kubernetes cluster resources such as pods, services, configmaps, secrets, deployments, nodes, etc., and makes these metrics available for Prometheus to scrape.
 
-Metrics Collected
-pod_count: Number of pods
-service_count: Number of services
-configmap_count: Number of configmaps
-secret_count: Number of secrets
-cronjob_count: Number of cronjobs
-deployment_count: Number of deployments
-statefulset_count: Number of stateful sets
-daemonset_count: Number of daemon sets
-replicaset_count: Number of replica sets
-endpoint_count: Number of endpoints
-persistentvolume_count: Number of persistent volumes
-namespace_count: Number of namespaces
-node_count: Number of nodes
-node_ready_count: Number of nodes in ready condition
-node_memory_pressure_count: Number of nodes with memory pressure
-node_disk_pressure_count: Number of nodes with disk pressure
-pvc_count: Number of PersistentVolumeClaims (PVCs)
-event_count: Number of events
-restart_count: Number of container restarts
-crash_count: Number of container crashes
-total_cpu_usage: Total CPU usage across all nodes
-total_memory_usage: Total memory usage across all nodes
-Using Prometheus Alertmanager
+#### Metrics Collected
+
+- **pod_count**: Number of pods
+- **service_count**: Number of services
+- **configmap_count**: Number of configmaps
+- **secret_count**: Number of secrets
+- **cronjob_count**: Number of cronjobs
+- **deployment_count**: Number of deployments
+- **statefulset_count**: Number of stateful sets
+- **daemonset_count**: Number of daemon sets
+- **replicaset_count**: Number of replica sets
+- **endpoint_count**: Number of endpoints
+- **persistentvolume_count**: Number of persistent volumes
+- **namespace_count**: Number of namespaces
+- **node_count**: Number of nodes
+- **node_ready_count**: Number of nodes in ready condition
+- **node_memory_pressure_count**: Number of nodes with memory pressure
+- **node_disk_pressure_count**: Number of nodes with disk pressure
+- **pvc_count**: Number of PersistentVolumeClaims (PVCs)
+- **event_count**: Number of events
+- **restart_count**: Number of container restarts
+- **crash_count**: Number of container crashes
+- **total_cpu_usage**: Total CPU usage across all nodes
+- **total_memory_usage**: Total memory usage across all nodes
+
+#### Using Prometheus Alertmanager
+
 Setting up Alertmanager in Prometheus allows you to track cluster-wide health based on these metrics. You can configure alerts for various metrics to get notified when certain thresholds are crossed. For example:
 
-Pod Count: Alert if the number of pods exceeds a certain limit, indicating potential resource overuse.
-Service Count: Monitor the number of services to ensure there are no unexpected spikes.
-Node Conditions: Alerts on node_memory_pressure_count and node_disk_pressure_count to track node health.
-Container Restarts and Crashes: Alerts on restart_count and crash_count to detect unstable deployments.
-Resource Usage: Alerts on total_cpu_usage and total_memory_usage to prevent resource exhaustion.
+- **Pod Count**: Alert if the number of pods exceeds a certain limit, indicating potential resource overuse.
+- **Service Count**: Monitor the number of services to ensure no unexpected spikes.
+- **Node Conditions**: Alerts on `node_memory_pressure_count` and `node_disk_pressure_count` to track node health.
+- **Container Restarts and Crashes**: Alerts on `restart_count` and `crash_count` to detect unstable deployments.
+- **Resource Usage**: Alerts on `total_cpu_usage` and `total_memory_usage` to prevent resource exhaustion.
+
+Here is an example Alertmanager configuration to alert on high CPU usage:
+
+```yaml
+groups:
+- name: kubernetes-resources
+  rules:
+  - alert: HighCPUUsage
+    expr: total_cpu_usage > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU usage detected"
+      description: "Total CPU usage across all nodes has exceeded 80 cores for more than 5 minutes."
+```
+
+
+
+
 
 ### 2. Time-based Autoscaling
 
