@@ -53,6 +53,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	if timeInterval != "" {
 		if parsedInterval, err := time.ParseDuration(timeInterval); err == nil {
 			interval = parsedInterval
+			log.Info("interval for re-run ",interval)
 		} else {
 			log.Error(err, "Failed to parse interval, using default")
 		}
