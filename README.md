@@ -213,12 +213,10 @@ KubeResourcesMonitor provides various Kubernetes resource metrics to Prometheus,
 
 ## Contributing
 
-Contributions are welcome! Please read the [contributing guidelines](CONTRIBUTING.md) first.
+Contributions are welcome! 
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License 
 
----
 
-Feel free to copy and paste this content into your README.md file.
