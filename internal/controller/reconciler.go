@@ -2,7 +2,6 @@ package controller
 
 import (
 	"context"
-	"time"
 
 	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
 	"github.com/go-logr/logr"
@@ -31,33 +30,21 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	shouldReturn, result, err := r.collectKubResourcesMetrics(ctx, req, instance, log)
-	if shouldReturn {
-		return result, err
+	if err := r.collectKubResourcesMetrics(ctx, req, instance, log); err != nil {
+		log.Info("error in getting metrics ", "err", err)
 	}
 
-	if len(instance.Spec.Deployments) > 0 {
-		timeBasedAutoScale(ctx, instance, r, log)
-	}
-	// Check RabbitMQ queues and scale deployments if necessary
-	for _, mq := range instance.Spec.MessageQueues {
-		if err := r.checkAndScaleDeployment(ctx, mq, log); err != nil {
-			log.Error(err, "Failed to check and scale deployment", "queue", mq.QueueName)
-		}
-	}
+	// scale deployments based on time
+	timeBasedAutoScale(ctx, instance, r, log)
+
+	// scale deployments based on high volume of messages in Message Queue
+	rabbitMQAutoScale(ctx, instance, r, log)
+
 	log.Info("Successfully reconciled KubeResourcesMonitor")
 
-	timeInterval := instance.Spec.Interval
-	interval := 5 * time.Minute
-
-	if timeInterval != "" {
-		if parsedInterval, err := time.ParseDuration(timeInterval); err == nil {
-			interval = parsedInterval
-			log.Info("interval for requeue", "interval", interval)
-		} else {
-			log.Error(err, "Failed to parse interval, using default")
-		}
-	}
+	interval := getInterval(instance, log)
 
 	return reconcile.Result{RequeueAfter: interval}, nil
 }
+
+
