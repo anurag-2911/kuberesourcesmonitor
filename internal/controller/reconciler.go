@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/logr"
 	"k8s.io/apimachinery/pkg/runtime"
 
-	// ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -40,7 +39,12 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	if len(instance.Spec.Deployments) > 0 {
 		timeBasedAutoScale(ctx, instance, r, log)
 	}
-
+	// Check RabbitMQ queues and scale deployments if necessary
+	for _, mq := range instance.Spec.MessageQueues {
+		if err := r.checkAndScaleDeployment(ctx, mq, log); err != nil {
+			log.Error(err, "Failed to check and scale deployment", "queue", mq.QueueName)
+		}
+	}
 	log.Info("Successfully reconciled KubeResourcesMonitor")
 
 	timeInterval := instance.Spec.Interval
@@ -49,6 +53,7 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 	if timeInterval != "" {
 		if parsedInterval, err := time.ParseDuration(timeInterval); err == nil {
 			interval = parsedInterval
+			log.Info("interval for requeue", "interval", interval)
 		} else {
 			log.Error(err, "Failed to parse interval, using default")
 		}
