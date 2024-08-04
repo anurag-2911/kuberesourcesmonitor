@@ -24,6 +24,7 @@ type ScaleTime struct {
 type MessageQueueSpec struct {
 	QueueSecretName     string `json:"queueSecretName"`     // Name of the secret containing the queue URL
 	QueueSecretKey      string `json:"queueSecretKey"`      // Key in the secret that holds the queue URL
+	QueueNamespace      string `json:"queueNamespace"`      // Namespace of the secret
 	QueueName           string `json:"queueName"`           // Name of the message queue (e.g., RabbitMQ, AWS SQS)
 	DeploymentName      string `json:"deploymentName"`      // Name of the deployment to scale
 	DeploymentNamespace string `json:"deploymentNamespace"` // Namespace of the deployment to scale

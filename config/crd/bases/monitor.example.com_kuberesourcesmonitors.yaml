@@ -90,6 +90,8 @@ spec:
                       type: string
                     queueName:
                       type: string
+                    queueNamespace:
+                      type: string
                     queueSecretKey:
                       type: string
                     queueSecretName:
@@ -107,6 +109,7 @@ spec:
                   - deploymentName
                   - deploymentNamespace
                   - queueName
+                  - queueNamespace
                   - queueSecretKey
                   - queueSecretName
                   - scaleDownReplicas

@@ -22,6 +22,7 @@ spec:
   messageQueues:
     - queueSecretName: "rabbitmq-credentials"
       queueSecretKey: "queueUrl"
+      queueNamespace: "kuberesourcesmonitor-system"  # Add the queueNamespace field
       queueName: "message.test.queue"
       deploymentName: "rabbitmq-consumer"
       deploymentNamespace: "default"

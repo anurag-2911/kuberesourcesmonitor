@@ -3,11 +3,10 @@ From the path kuberesourcesmonitor/charts run the commands
 1. Lint the Helm Chart @ folder charts:
     helm lint kuberesourcesmonitor
 2. Dry Run the Helm Chart Installation:
-    kubectl apply -f charts/kuberesourcesmonitor/templates/crd-install.yaml
-    helm install kuberm --dry-run --debug kuberesourcesmonitor
+    kubectl apply -f kuberesourcesmonitor/crds/crd-install.yaml
+    helm install krm --dry-run --debug kuberesourcesmonitor
 3. Install the Helm Chart:
-    helm install kuberm kuberesourcesmonitor (obsolete)
-    
+        
     kubectl create namespace kuberesourcesmonitor
     helm upgrade --install krm kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack
 

@@ -1,24 +1,45 @@
 global:
-  prometheusReleaseLabel: kube-prometheus-stack
+  prometheusReleaseLabel: "kube-prometheus-stack" # Set this value as per your requirement
 
-replicaCount: 1
-
-image:
-  repository: anurag2911/kuberesourcesmonitor
-  tag: latest
-  pullPolicy: IfNotPresent
+serviceAccount:
+  create: true
+  name: ""
 
 service:
   type: ClusterIP
   port: 2112
 
-serviceAccount:
-  create: true
-  name: ""  
+image:
+  repository: "anurag2911/kuberesourcesmonitor"
+  tag: "latest"
+  pullPolicy: "Always"
 
-prometheus:
-  enabled: true
-  servicemonitor:
-    enabled: true
-    interval: 30s
-    labels: {}
+rabbitmq:
+  queueUrl: "YW1xcDovL25vdmVsbDpub3ZlbGxAMTIzQDE3Mi4xMDUuNTEuMjE2OjU2NzIv"
+
+customResource:
+  interval: "30s"
+  prometheusEndpoint: "2112"
+  configMapName: "kuberesourcesmonitor-config"
+  deployments:
+    - name: "busybox-deployment"
+      namespace: "default"
+      minReplicas: 2
+      maxReplicas: 5
+      scaleTimes:
+        - startTime: "00:00"
+          endTime: "06:00"
+          replicas: 5
+        - startTime: "06:00"
+          endTime: "23:59"
+          replicas: 2
+  messageQueues:
+    - queueSecretName: "rabbitmq-credentials"
+      queueSecretKey: "queueUrl"
+      queueNamespace: "kuberesourcesmonitor" 
+      queueName: "message.test.queue"
+      deploymentName: "rabbitmq-consumer"
+      deploymentNamespace: "default"
+      thresholdMessages: 10
+      scaleUpReplicas: 5
+      scaleDownReplicas: 1
