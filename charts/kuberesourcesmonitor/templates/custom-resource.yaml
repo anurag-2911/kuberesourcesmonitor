@@ -2,20 +2,33 @@ apiVersion: monitor.example.com/v1alpha1
 kind: KubeResourcesMonitor
 metadata:
   name: example-kuberesourcesmonitor
-  namespace: kuberesourcesmonitor
+  namespace: {{ .Release.Namespace }}
 spec:
-  interval: "5m"
-  prometheusEndpoint: "2112"
-  configMapName: "kuberesourcesmonitor-config"
+  interval: "{{ .Values.customResource.interval }}"
+  prometheusEndpoint: "{{ .Values.customResource.prometheusEndpoint }}"
+  configMapName: "{{ .Values.customResource.configMapName }}"
   deployments:
-    - name: "busybox-deployment"
-      namespace: "default"  
-      minReplicas: 2
-      maxReplicas: 5
+    {{- range .Values.customResource.deployments }}
+    - name: "{{ .name }}"
+      namespace: "{{ .namespace }}"
+      minReplicas: {{ .minReplicas }}
+      maxReplicas: {{ .maxReplicas }}
       scaleTimes:
-        - startTime: "00:00"  
-          endTime: "06:00"    
-          replicas: 5         
-        - startTime: "06:00"
-          endTime: "23:59"
-          replicas: 2
+        {{- range .scaleTimes }}
+        - startTime: "{{ .startTime }}"
+          endTime: "{{ .endTime }}"
+          replicas: {{ .replicas }}
+        {{- end }}
+    {{- end }}
+  messageQueues:
+    {{- range .Values.customResource.messageQueues }}
+    - queueSecretName: "{{ .queueSecretName }}"
+      queueSecretKey: "{{ .queueSecretKey }}"
+      queueNamespace: "{{ .queueNamespace }}"  
+      queueName: "{{ .queueName }}"
+      deploymentName: "{{ .deploymentName }}"
+      deploymentNamespace: "{{ .deploymentNamespace }}"
+      thresholdMessages: {{ .thresholdMessages }}
+      scaleUpReplicas: {{ .scaleUpReplicas }}
+      scaleDownReplicas: {{ .scaleDownReplicas }}
+    {{- end }}

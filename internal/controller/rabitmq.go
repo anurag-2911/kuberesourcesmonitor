@@ -14,7 +14,8 @@ import (
 
 func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Context, mq monitorv1alpha1.MessageQueueSpec, log logr.Logger) error {
     secret := &corev1.Secret{}
-    if err := r.Get(ctx, types.NamespacedName{Name: mq.QueueSecretName, Namespace: "kuberesourcesmonitor-system"}, secret); err != nil {
+    log.Info("namespace used for secret ", "namespace", mq.QueueNamespace)
+    if err := r.Get(ctx, types.NamespacedName{Name: mq.QueueSecretName, Namespace: mq.QueueNamespace}, secret); err != nil {
         log.Error(err, "Failed to get Secret")
         return err
     }
@@ -25,8 +26,6 @@ func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Con
         log.Error(err, "Queue URL key not found in Secret")
         return err
     }
-
-    // log.Info("Queue URL from Secret", "url", string(queueUrl))
 
     conn, err := amqp.Dial(string(queueUrl))
     if err != nil {
@@ -86,3 +85,4 @@ func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Con
 
     return nil
 }
+
