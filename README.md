@@ -368,6 +368,51 @@ After installing KubeResourcesMonitor and configuring the ConfigMap, the operato
 
 You can view the collected metrics by accessing the Prometheus server configured to scrape metrics from KubeResourcesMonitor.
 
+### Changing ConfigMap Values
+
+To enable or change the values in the `kuberesourcesmonitor-config` ConfigMap, follow the steps below.
+
+#### Step 1: Verify the Current ConfigMap Values
+
+Before making changes, it’s a good practice to check the current values of the ConfigMap.
+
+kubectl get configmap kuberesourcesmonitor-config -n kuberesourcesmonitor -o yaml
+
+This command will display the current values of the ConfigMap.
+
+#### Step 2: Update ConfigMap Values
+
+To change the values of the `kuberesourcesmonitor-config` ConfigMap, you can use the `kubectl patch` command. This command allows you to merge new values into the existing ConfigMap.
+
+kubectl patch configmap kuberesourcesmonitor-config -n kuberesourcesmonitor --type merge -p '{"data":{"collectMetrics":"true","rabbitMQAutoScale":"true","timeBasedAutoScale":"true"}}'
+
+Explanation of the command:
+
+- `kubectl patch configmap kuberesourcesmonitor-config`: This is the command to patch (update) the specified ConfigMap.
+- `-n kuberesourcesmonitor`: This specifies the namespace where the ConfigMap is located.
+- `--type merge`: This specifies that the patch type is a merge, meaning the provided values will be merged with the existing data.
+- `-p '{"data":{"collectMetrics":"true","rabbitMQAutoScale":"true","timeBasedAutoScale":"true"}}'`: This is the patch data in JSON format. It updates the `collectMetrics`, `rabbitMQAutoScale`, and `timeBasedAutoScale` values to `true`.
+
+#### Step 3: Verify the Changes
+
+After updating the ConfigMap, verify the changes to ensure they have been applied correctly.
+
+kubectl get configmap kuberesourcesmonitor-config -n kuberesourcesmonitor -o yaml
+
+Check the output to confirm that the `collectMetrics`, `rabbitMQAutoScale`, and `timeBasedAutoScale` values are set to `true`.
+
+#### Step 4: Monitor the Changes
+
+Once the ConfigMap values are updated, the KubeResourcesMonitor controller will read the new values and adjust its behavior accordingly. You can monitor the logs of the controller to see if it picks up the changes and starts acting based on the new configuration.
+
+
+kubectl logs -f deployment/kuberesourcesmonitor-controller-manager -n kuberesourcesmonitor
+
+
+Look for log entries indicating that the controller has read the new configuration and is performing actions based on the updated values.
+
+By following these steps, you can effectively change the configuration of the KubeResourcesMonitor to enable or disable its features as needed.
+
 ## Contributing
 
 We welcome contributions to KubeResourcesMonitor! If you have any improvements or bug fixes, please submit a pull request.
