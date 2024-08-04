@@ -81,7 +81,74 @@ groups:
 
 ### 2. Time-based Autoscaling
 
-KubeResourcesMonitor can scale specified deployments based on configured time intervals. This is useful for scaling applications during peak and off-peak hours.
+KubeResourcesMonitor can scale specified deployments based on configured time intervals. This feature is particularly useful for scaling applications during peak and off-peak hours, ensuring optimal resource utilization and cost efficiency.
+
+#### Benefits
+
+- **Resource Optimization**: Automatically scale up resources during peak hours to handle increased load and scale down during off-peak hours to save on costs.
+- **Performance Management**: Maintain application performance by ensuring that the appropriate number of instances are running based on anticipated load.
+- **Cost Efficiency**: Reduce costs by minimizing the number of running instances during periods of low demand.
+
+#### Configuration
+
+To configure time-based autoscaling, specify the `deployments` section in your Custom Resource Definition (CRD). Here's an example configuration:
+
+```yaml
+apiVersion: monitor.example.com/v1alpha1
+kind: KubeResourcesMonitor
+metadata:
+  name: example-kuberesourcesmonitor
+  namespace: kuberesourcesmonitor-system
+spec:
+  interval: "45s"  # Interval to requeue the reconciler
+  prometheusEndpoint: "2112"  # Endpoint for Prometheus metrics
+  configMapName: "kuberesourcesmonitor-config"  # Name of the ConfigMap containing metrics configuration
+  deployments:
+    - name: "busybox-deployment"
+      namespace: "default"
+      minReplicas: 2
+      maxReplicas: 5
+      scaleTimes:
+        - startTime: "00:00"  # Time to start scaling
+          endTime: "06:00"    # Time to end scaling
+          replicas: 5         # Number of replicas during this time window
+        - startTime: "06:00"
+          endTime: "23:59"
+          replicas: 2
+  messageQueues:
+    - queueSecretName: "rabbitmq-credentials"
+      queueSecretKey: "queueUrl"
+      queueNamespace: "kuberesourcesmonitor-system"  
+      queueName: "message.test.queue"
+      deploymentName: "rabbitmq-consumer"
+      deploymentNamespace: "default"
+      thresholdMessages: 10
+      scaleUpReplicas: 5
+      scaleDownReplicas: 1
+```
+
+#### How to Configure Time-based Autoscaling
+
+1. **Define the CRD**: Ensure the CRD includes fields for specifying deployment names, namespaces, minimum and maximum replicas, and scale times.
+2. **Specify Deployment Details**: In the `deployments` section, provide details of the deployments you wish to scale, including:
+   - `name`: The name of the deployment.
+   - `namespace`: The namespace where the deployment resides.
+   - `minReplicas`: The minimum number of replicas.
+   - `maxReplicas`: The maximum number of replicas.
+   - `scaleTimes`: An array of time windows specifying the start and end times, and the number of replicas to scale to during those times.
+3. **Apply the Configuration**: Use `kubectl` to apply the CRD configuration to your Kubernetes cluster.
+
+
+kubectl apply customresource.yaml
+
+
+#### Example Use Cases
+
+- **E-commerce Applications**: Scale up during peak hours and scale down during the night when traffic is low.
+- **Data Processing**: Increase the number of workers during data ingestion periods and reduce them during processing off-hours.
+- **Seasonal Traffic**: Automatically adjust resources during seasonal peaks, such as holiday sales or promotional events.
+
+By leveraging time-based autoscaling, you can ensure that your applications have the resources to handle varying workloads efficiently, maintaining performance while optimizing costs.
 
 ### 3. Message Queue-based Autoscaling
 
