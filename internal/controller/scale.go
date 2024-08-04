@@ -31,12 +31,14 @@ func (r *KubeResourcesMonitorReconciler) scaleDeployment(ctx context.Context, de
 
 // timeBasedAutoScale scales deployments based on specified time windows
 func timeBasedAutoScale(ctx context.Context, instance *monitorv1alpha1.KubeResourcesMonitor, r *KubeResourcesMonitorReconciler, log logr.Logger) {
-	currentTime := time.Now().Format("15:04")
-	for _, deployment := range instance.Spec.Deployments {
-		for _, scaleTime := range deployment.ScaleTimes {
-			if currentTime >= scaleTime.StartTime && currentTime <= scaleTime.EndTime {
-				log.Info("Scaling deployment", "deployment", deployment.Name, "replicas", scaleTime.Replicas)
-				r.scaleDeployment(ctx, deployment.Name, scaleTime.Replicas, deployment.Namespace, log)
+	if len(instance.Spec.Deployments) > 0 {
+		currentTime := time.Now().Format("15:04")
+		for _, deployment := range instance.Spec.Deployments {
+			for _, scaleTime := range deployment.ScaleTimes {
+				if currentTime >= scaleTime.StartTime && currentTime <= scaleTime.EndTime {
+					log.Info("Scaling deployment", "deployment", deployment.Name, "replicas", scaleTime.Replicas)
+					r.scaleDeployment(ctx, deployment.Name, scaleTime.Replicas, deployment.Namespace, log)
+				}
 			}
 		}
 	}

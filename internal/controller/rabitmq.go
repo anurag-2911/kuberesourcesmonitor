@@ -86,3 +86,11 @@ func (r *KubeResourcesMonitorReconciler) checkAndScaleDeployment(ctx context.Con
     return nil
 }
 
+func rabbitMQAutoScale(ctx context.Context, instance *monitorv1alpha1.KubeResourcesMonitor, r *KubeResourcesMonitorReconciler, log logr.Logger) {
+	for _, mq := range instance.Spec.MessageQueues {
+		if err := r.checkAndScaleDeployment(ctx, mq, log); err != nil {
+			log.Error(err, "Failed to check and scale deployment", "queue", mq.QueueName)
+		}
+	}
+}
+
