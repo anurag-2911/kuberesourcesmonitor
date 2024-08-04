@@ -266,6 +266,78 @@ To install KubeResourcesMonitor using Helm, follow these steps:
 
    This command will install the KubeResourcesMonitor in the `kuberesourcesmonitor` namespace.
 
+### Installation Instructions for KubeResourcesMonitor
+
+Follow these steps to install KubeResourcesMonitor from the published Helm repository.
+
+#### Step 1: Add Helm Repository
+
+Add the KubeResourcesMonitor Helm repository to your Helm configuration.
+
+helm repo add krm https://anurag-2911.github.io/helm-charts
+
+#### Step 2: Update Helm Repositories
+
+Update your local Helm repository cache to make sure you have the latest version of the charts.
+
+helm repo update
+
+#### Step 3: Install the Helm Chart in a Specific Namespace
+
+1. **Create Namespace**
+
+Create a new namespace for KubeResourcesMonitor.
+
+kubectl create namespace kuberesourcesmonitor
+
+2. **Install the Helm Chart**
+
+Install the KubeResourcesMonitor Helm chart in the newly created namespace.
+
+helm install krm krm/kuberesourcesmonitor --namespace kuberesourcesmonitor --set global.prometheusReleaseLabel=kube-prometheus-stack
+
+3. **Verify Installation**
+
+Check all resources in the `kuberesourcesmonitor` namespace to ensure they are up and running.
+
+kubectl get all -n kuberesourcesmonitor
+
+4. **Uninstall KubeResourcesMonitor**
+
+If you need to uninstall KubeResourcesMonitor, use the following commands.
+
+helm uninstall krm --namespace kuberesourcesmonitor
+kubectl delete namespace kuberesourcesmonitor
+
+5. **List Helm Chart**
+
+To list the installed Helm chart in the `kuberesourcesmonitor` namespace.
+
+helm list --namespace kuberesourcesmonitor
+
+
+#### Step 4: Port Forward and Verify Metrics
+
+1. **Get Pods**
+
+Retrieve the list of pods in the `kuberesourcesmonitor` namespace.
+
+kubectl get pods -n kuberesourcesmonitor
+
+2. **Port Forward**
+
+Port forward the controller pod to access the Prometheus metrics endpoint locally. Replace `kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q` with the actual pod name.
+
+kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor
+
+3. **Verify Metrics Endpoint**
+
+Open your browser and navigate to `http://localhost:8080/metrics` to verify that the controller is updating metrics.
+
+http://localhost:8080/metrics
+
+By following these steps, you will successfully install, verify, and manage the KubeResourcesMonitor in your Kubernetes cluster using Helm. This setup allows you to leverage the monitoring and autoscaling features provided by KubeResourcesMonitor effectively.
+
 ## Configuration
 
 KubeResourcesMonitor is configured using a ConfigMap. Below is an example configuration:
