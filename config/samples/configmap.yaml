@@ -4,25 +4,6 @@ metadata:
   name: kuberesourcesmonitor-config
   namespace: kuberesourcesmonitor-system
 data:
-  metrics: |
-    - pods
-    - services
-    - configmaps
-    - secrets
-    - cronjobs
-    - jobs
-    - daemonsets
-    - replicasets
-    - replicationcontrollers
-    - statefulsets
-    - deployments
-    - nodes
-    - pvcs
-    - events
-    - restarts
-    - crashes
-    - cpu_usage
-    - memory_usage
-    - node_ready
-    - node_memory_pressure
-    - node_disk_pressure
+  collectMetrics: "false"
+  rabbitMQAutoScale: "false"
+  timeBasedAutoScale: "false"

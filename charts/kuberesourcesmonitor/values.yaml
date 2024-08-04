@@ -17,6 +17,10 @@ image:
 rabbitmq:
   queueUrl: "YW1xcDovL25vdmVsbDpub3ZlbGxAMTIzQDE3Mi4xMDUuNTEuMjE2OjU2NzIv"
 
+collectMetrics: "false"
+rabbitMQAutoScale: "false"
+timeBasedAutoScale: "false"
+
 customResource:
   interval: "30s"
   prometheusEndpoint: "2112"

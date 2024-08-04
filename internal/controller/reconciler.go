@@ -2,9 +2,11 @@ package controller
 
 import (
 	"context"
+	"strconv"
 
 	monitorv1alpha1 "github.com/anurag-2911/kuberesourcesmonitor/api/v1alpha1"
 	"github.com/go-logr/logr"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -19,6 +21,7 @@ type KubeResourcesMonitorReconciler struct {
 
 func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.Log.WithValues("kuberesourcesmonitor", req.NamespacedName)
+	
 	log.Info("Reconcile function called")
 
 	instance := &monitorv1alpha1.KubeResourcesMonitor{}
@@ -30,21 +33,44 @@ func (r *KubeResourcesMonitorReconciler) Reconcile(ctx context.Context, req reco
 		return reconcile.Result{}, client.IgnoreNotFound(err)
 	}
 
-	if err := r.collectKubResourcesMetrics(ctx, req, instance, log); err != nil {
-		log.Info("error in getting metrics ", "err", err)
+	configMap := &corev1.ConfigMap{}
+	err = r.Get(ctx, client.ObjectKey{Namespace: req.Namespace, Name: instance.Spec.ConfigMapName}, configMap)
+	if err != nil {
+		log.Error(err, "Failed to get ConfigMap", "name", instance.Spec.ConfigMapName)
+		return reconcile.Result{}, err
 	}
 
-	// scale deployments based on time
-	timeBasedAutoScale(ctx, instance, r, log)
+	isCollectMetrics, err := strconv.ParseBool(configMap.Data["collectMetrics"])
+	if err != nil {
+		isCollectMetrics = false
+	}
+	isRabbitMQAutoScale, err := strconv.ParseBool(configMap.Data["rabbitMQAutoScale"])
+	if err != nil {
+		isRabbitMQAutoScale = false
+	}
+	isTimeBasedAutoScale, err := strconv.ParseBool(configMap.Data["timeBasedAutoScale"])
+	if err != nil {
+		isTimeBasedAutoScale = false
+	}
 
-	// scale deployments based on high volume of messages in Message Queue
-	rabbitMQAutoScale(ctx, instance, r, log)
+	log.Info("ConfigMap values", "collectMetrics", isCollectMetrics, "rabbitMQAutoScale", isRabbitMQAutoScale, "timeBasedAutoScale", isTimeBasedAutoScale)
 
-	log.Info("Successfully reconciled KubeResourcesMonitor")
+	if isCollectMetrics {
+		// Adds metrics for different resources, logs it, and provides it to Prometheus to scrape
+		collectMetrics(ctx, r, req, instance, log)
+	}
+
+	if isRabbitMQAutoScale {
+		rabbitMQAutoScale(ctx, instance, r, log)
+	}
+
+	if isTimeBasedAutoScale {
+		timeBasedAutoScale(ctx, instance, r, log)
+	}
+
+	log.Info("Successfully reconciled this iteration")
 
 	interval := getInterval(instance, log)
 
 	return reconcile.Result{RequeueAfter: interval}, nil
 }
-
-
