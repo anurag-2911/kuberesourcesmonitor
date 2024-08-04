@@ -184,7 +184,7 @@ This configuration will scale the `rabbitmq-consumer` deployment based on the nu
     kubectl get pods -n kuberesourcesmonitor 
 
 2. Port forward the requests:
-
+    For example, for a pod name kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q
     kubectl port-forward pod/kuberesourcesmonitor-kubemntr-f6847f6fd-kmj5q 8080:2112 -n kuberesourcesmonitor
 
 3. Verify the metrics:
