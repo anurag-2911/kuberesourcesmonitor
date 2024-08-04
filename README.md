@@ -150,9 +150,100 @@ kubectl apply customresource.yaml
 
 By leveraging time-based autoscaling, you can ensure that your applications have the resources to handle varying workloads efficiently, maintaining performance while optimizing costs.
 
-### 3. Message Queue-based Autoscaling
+### Message Queue-based Autoscaling
 
-KubeResourcesMonitor can scale consumer microservice deployments based on the number of messages in a RabbitMQ queue. This ensures that your application can handle varying loads efficiently.
+KubeResourcesMonitor can scale consumer microservice deployments based on the number of messages in a RabbitMQ queue. This dynamic scaling ensures that your application can efficiently handle varying loads by automatically adjusting the number of consumer instances based on the queue length.
+
+#### Benefits
+
+- **Efficient Load Handling**: Automatically scale up the number of consumer instances when there are many messages in the queue to process them faster and scale down when the load decreases.
+- **Resource Optimization**: Utilize resources more effectively by scaling down consumers during periods of low traffic, reducing operational costs.
+- **Improved Performance**: Ensure timely processing of messages, which can be critical for applications that rely on real-time data processing.
+
+#### Configuration
+
+To configure RabbitMQ-based autoscaling, you need to define the `messageQueues` section in your Custom Resource Definition (CRD) and use a Kubernetes Secret to store the RabbitMQ URL securely.
+
+##### Example Secret Configuration
+
+Create a Kubernetes Secret to store the RabbitMQ connection details. This ensures that sensitive information is not exposed in your configuration files.
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-credentials
+  namespace: kuberesourcesmonitor-system
+type: Opaque
+data:
+  # Base64 encode the RabbitMQ URL
+  queueUrl: YW1zcDovLc5vdmVsbDpuc3ZlbGxAMTIzQDE3Mi4xMDUcNTEuMjE2OjU2NzIv
+```
+
+The `queueUrl` is the base64 encoded RabbitMQ URL. To encode your RabbitMQ URL, you can use the following command:
+
+echo -n 'amqp://user:password@hostname:port/vhost' | base64
+
+
+##### Example CRD Configuration
+
+Define the `messageQueues` section in your CRD to specify how the consumer deployment should scale based on the message queue length.
+
+```yaml
+apiVersion: monitor.example.com/v1alpha1
+kind: KubeResourcesMonitor
+metadata:
+  name: example-kuberesourcesmonitor
+  namespace: kuberesourcesmonitor-system
+spec:
+  interval: "45s"  # Interval to requeue the reconciler
+  prometheusEndpoint: "2112"  # Endpoint for Prometheus metrics
+  configMapName: "kuberesourcesmonitor-config"  # Name of the ConfigMap containing metrics configuration
+  deployments:
+    - name: "busybox-deployment"
+      namespace: "default"
+      minReplicas: 2
+      maxReplicas: 5
+      scaleTimes:
+        - startTime: "00:00"  # Time to start scaling
+          endTime: "06:00"    # Time to end scaling
+          replicas: 5         # Number of replicas during this time window
+        - startTime: "06:00"
+          endTime: "23:59"
+          replicas: 2
+  messageQueues:
+    - queueSecretName: "rabbitmq-credentials"
+      queueSecretKey: "queueUrl"
+      queueNamespace: "kuberesourcesmonitor-system"  # Namespace where the Secret is located
+      queueName: "message.test.queue"
+      deploymentName: "rabbitmq-consumer"
+      deploymentNamespace: "default"
+      thresholdMessages: 10
+      scaleUpReplicas: 5
+      scaleDownReplicas: 1
+    # Add more message queues as needed
+```
+
+##### How to Configure Message Queue-based Autoscaling
+
+1. **Create the Secret**: Store the RabbitMQ URL in a Kubernetes Secret.
+
+kubectl apply -f config/samples/secret.yaml
+
+2. **Define the CRD**: Include the `messageQueues` section with the necessary details for the RabbitMQ queue and the deployment to be scaled.
+
+kubectl apply -f config/samples/customresource.yaml
+
+3. **Apply the Configuration**: Use `kubectl` to apply the CRD configuration to your Kubernetes cluster.
+
+kubectl apply -f config/samples/customresource.yaml
+
+#### Example Use Cases
+
+- **Real-time Data Processing**: Scale up the number of consumers during periods of high message traffic to process data faster.
+- **Event-driven Applications**: Ensure that your event-driven architecture can handle spikes in event generation by dynamically scaling consumers.
+- **Batch Processing**: Efficiently handle batch processing by scaling consumers based on the number of messages queued for processing.
+
 
 ## Installation
 
